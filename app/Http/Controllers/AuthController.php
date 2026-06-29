@@ -162,7 +162,7 @@ class AuthController extends Controller
 
             session()->forget(['pending_verification_email', 'pending_verification_user_id']);
 
-            Auth::login($user);
+            //Auth::login($user);
 
             return redirect()->route('login')->with('success', 'Email verified successfully! Welcome to your dashboard.');
         }

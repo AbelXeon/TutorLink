@@ -7,6 +7,19 @@ use Illuminate\Database\Eloquent\Model;
 
 class Subjects extends Model
 {
-        protected $fillable = ['category_id', 'name'];
+     protected $table = 'subjects';
+
+        protected $fillable = 
+        [
+            'category_id',
+             'name'
+             ];
+
+             
+    // NEW: Defines the relationship back to the parent Category
+    public function category()
+    {
+        return $this->belongsTo(Categories::class, 'category_id');
+    }
 
 }
