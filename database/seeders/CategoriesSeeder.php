@@ -14,22 +14,47 @@ class CategoriesSeeder extends Seeder
      */
     public function run(): void
     {
-       // Predefined categories and their matching subjects
+         // 1. Define Categories and their corresponding Subjects
         $data = [
-            'Programming' => ['Java', 'Python', 'HTML', 'CSS', 'PHP', 'JavaScript', 'C++'],
-            'Languages' => ['English', 'Amharic', 'French', 'Arabic', 'Spanish'],
-            'School Subjects' => ['Mathematics', 'Physics', 'Chemistry', 'Biology', 'History'],
-            'Skills' => ['Guitar', 'Piano', 'Photography', 'Public Speaking', 'Graphic Design']
+            'Language' => [
+                'English', 
+                'Amharic', 
+                'French', 
+                'Oromiffa'
+            ],
+            'Programming' => [
+                'Python', 
+                'JavaScript', 
+                'PHP', 
+                'Java', 
+                'C++'
+            ],
+            'Academic Subjects' => [
+                'Mathematics', 
+                'Physics', 
+                'Chemistry', 
+                'Biology', 
+                'History'
+            ],
+            'Skills' => [
+                'Graphic Design', 
+                'Photography', 
+                'Video Editing', 
+                'Public Speaking'
+            ]
         ];
 
-        foreach ($data as $catName => $subNames) {
-            $category = Categories::firstOrCreate(['name' => $catName]);
+        foreach ($data as $categoryName => $subjectList) {
+            // Create Category
+            $category = Categories::firstOrCreate([
+                'name' => $categoryName
+            ]);
 
-            foreach ($subNames as $subName) {
-                
-            Subjects::firstOrCreate([
+            // Create and link Subjects
+            foreach ($subjectList as $subjectName) {
+                Subjects::firstOrCreate([
                     'category_id' => $category->id,
-                    'name' => $subName
+                    'name'        => $subjectName
                 ]);
             }
         }

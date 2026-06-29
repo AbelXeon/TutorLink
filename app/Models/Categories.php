@@ -7,6 +7,9 @@ use Illuminate\Database\Eloquent\Model;
 
 class Categories extends Model
 {
-        protected $fillable = ['name'];
+    public function subjects()
+    {
+        return $this->hasMany(Subjects::class, 'category_id');
+    }
 
 }

@@ -4,98 +4,128 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\DB;
 use App\Models\Categories;
 use App\Models\Subjects;
 use App\Models\TutorProfile;
 use App\Models\Schedule;
+use App\Models\GradeLevels;
 
 class ProfileController extends Controller
 {
 
-     public function TeacherProfile(){
-        return view('Teacher.Teacher_Profile');
-    }
-
-     public function TeacherProfileMake(){
-        return view('Teacher.Teacher_Profile_Edit');
-    }
-
-    // Renders the make profile page with dynamic categories/subjects
-    public function TutorProfile()
+     public function showTutorProfileSetup()
     {
-        $categories = Categories::all();
-        $subjects = Subjects::all(); // Sent to the blade to group inside JS
-
-        return view('Profile.Tutor_Profile_make', compact('categories', 'subjects'));
-    }
-
-    // Stores the submitted details
-    public function StoreTutorProfile(Request $request)
-    {
-        $request->validate([
-            'bio'                 => 'required|string',
-            'experience_years'    => 'required|integer|min:0',
-            'availability_status' => 'required|string',
-            'mode'                => 'required|string',
-            'qualification'       => 'required|string',
-            'grade_level'         => 'required|string',
-            'price_per_hour'      => 'required|numeric|min:0',
-            'max_students'        => 'required|integer|min:1',
-            // Schedule validation
-            'day_of_week'         => 'required|string',
-            'start_time'          => 'required',
-            'end_time'            => 'required',
-            // Subjects validation
-            'subject_ids'         => 'required|array',
-            'subject_ids.*'       => 'exists:subjects,id',
-        ]);
-
         $user = Auth::user();
+        $tutorProfile = TutorProfile::firstOrCreate(['user_id' => $user->id]);
+        $gradeLevels = GradeLevels::all();
 
-        if (!$user) {
-            return redirect()->route('Auth.Login')->with('error', 'Please log in first.');
+        // Load categories with their respective subjects securely in one query
+        $categories = Categories::with('subjects')->get();
+
+        if (empty($tutorProfile->bio)) {
+            return view('Profile.Tutor_Profile_make', compact('user', 'tutorProfile', 'gradeLevels', 'categories'));
         }
 
-        // 1. Create or Update the Tutor Profile record
-        $tutorProfile = TutorProfile::updateOrCreate(
-            ['user_id' => $user->id],
-            [
-                'bio'                 => $request->bio,
-                'experience_years'    => $request->experience_years,
-                'availability_status' => $request->availability_status,
-                'qualification'       => $request->qualification,
-                'max_students'        => $request->max_students,
-                'price_per_hour'      => $request->price_per_hour,
-                'grade_level'         => $request->grade_level,
-                'mode'                => $request->mode,
-                'total_reviews'       => 0,
-            ]
-        );
+        return view('Teacher.Teacher_Profile_Edit', compact('user', 'tutorProfile', 'gradeLevels', 'categories'));
+    }
 
-        // 2. Link selected subjects inside 'tutor_subjects' table
-        // Delete previous selections to avoid duplicate entries
-        DB::table('tutor_subjects')->where('tutor_profile_id', $tutorProfile->id)->delete();
 
-        foreach ($request->subject_ids as $subjectId) {
-            DB::table('tutor_subjects')->insert([
-                'tutor_profile_id' => $tutorProfile->id,
-                'subject_id'       => $subjectId,
+
+
+    // 2. Save/Update Profile Data
+    public function storeTutorProfileSetup(Request $request)
+    {
+        $user = Auth::user();
+        $limiterKey = 'tutor-profile-edit:' . $user->id;
+
+        if (RateLimiter::tooManyAttempts($limiterKey, 3)) {
+            $secondsLeft = RateLimiter::availableIn($limiterKey);
+            $hoursLeft = ceil($secondsLeft / 3600);
+
+            return back()->withErrors([
+                'error' => "Security Limit: You can only edit your profile 3 times per day. Please try again in {$hoursLeft} hours."
             ]);
         }
 
-        // 3. Create or Update the weekly schedule
-        Schedule::updateOrCreate(
-            ['tutor_id' => $tutorProfile->id],
-            [
-                'day_of_week' => $request->day_of_week,
-                'start_time'  => $request->start_time,
-                'end_time'    => $request->end_time,
-            ]
-        );
+        $request->validate([
+            'bio'              => 'required|string|min:20|max:1000',
+            'experience_years' => 'required|integer|min:0|max:50',
+            'qualification'    => 'required|string|in:High School Diploma,Bachelor Degree,Master Degree,PhD,Other Certification',
+            'max_students'     => 'required|integer|min:1|max:100',
+            'price_per_hour'   => 'required|numeric|min:0',
+            'teaching_mode'    => 'required|string|in:online,in-person,hybrid',
+            'grade_levels'     => 'required|array',
+            'grade_levels.*'   => 'exists:grade_levels,id',
+            'profile_image'    => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            
+            // New Subjects validation
+            'subjects'         => 'required|array',
+            'subjects.*'       => 'exists:subjects,id', // Strict verification to ensure no fake IDs are submitted
+        ]);
 
-        // 4. Redirect the teacher to their completed profile view
-        return redirect()->route('Teacher.Teacher_Dashboard')
-            ->with('success', 'Your profile has been created successfully!');
+        // Securely verify that all selected subjects belong to the same category
+        if ($request->has('subjects') && count($request->subjects) > 0) {
+            $subjectIds = $request->subjects;
+            
+            // Get the category of the first selected subject
+            $firstSubject = \App\Models\Subjects::find($subjectIds[0]);
+            if ($firstSubject) {
+                $categoryId = $firstSubject->category_id;
+                
+                // Check if any selected subject has a different category
+                $invalidCount = \App\Models\Subjects::whereIn('id', $subjectIds)
+                    ->where('category_id', '!=', $categoryId)
+                    ->count();
+
+                if ($invalidCount > 0) {
+                    return back()->withErrors(['subjects' => 'All selected subjects must belong to the same category.']);
+                }
+            }
+        }
+
+        $profile = TutorProfile::where('user_id', $user->id)->firstOrFail();
+
+        if ($request->hasFile('profile_image')) {
+            if ($user->profile_image) {
+                Storage::disk('public')->delete($user->profile_image);
+            }
+            $path = $request->file('profile_image')->store('profiles', 'public');
+            $user->update(['profile_image' => $path]);
+        }
+
+        $profile->update([
+            'bio'              => $request->bio,
+            'experience_years' => $request->experience_years,
+            'qualification'    => $request->qualification,
+            'max_students'     => $request->max_students,
+            'price_per_hour'   => $request->price_per_hour,
+            'teaching_mode'    => $request->teaching_mode,
+            'availability_status' => 'active', 
+        ]);
+
+        // Securely sync relationships
+        $profile->gradeLevels()->sync($request->grade_levels);
+        $profile->subjects()->sync($request->subjects); // <-- NEW: Syncs selected subjects in pivot table
+
+        RateLimiter::hit($limiterKey, 86400);
+
+        return redirect()->route('tutor.dashboard')->with('success', 'Your tutor profile has been updated!');
     }
+
+    // 3. Render Dashboard
+    public function showTeacherDashboard()
+    {
+        $user = Auth::user();
+        $tutorProfile = TutorProfile::where('user_id', $user->id)->firstOrFail();
+        $gradeLevels = GradeLevels::all();
+        $categories = Categories::with('subjects')->get(); // Fetch categories to display on Dashboard
+
+        return view('Teacher.Teacher_Dashboard', compact('user', 'tutorProfile', 'gradeLevels', 'categories'));
+    }
+
+
 }
+

@@ -3,147 +3,170 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Teacher Register - TutorLink</title>
-
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Teacher Registration</title>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-md w-full space-y-8 bg-white p-8 rounded-lg shadow-md">
+        <div>
+            <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+                Register as a Teacher
+            </h2>
+        </div>
 
-<body class="bg-light">
+        @if ($errors->any())
+            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+                <strong class="font-bold">Whoops!</strong>
+                <ul class="mt-2 list-disc list-inside text-sm">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
 
-<div class="container py-5">
+        <form class="mt-8 space-y-6" action="{{ route('register.teacher') }}" method="POST">
+            @csrf
+            
+            <div class="rounded-md shadow-sm space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="first_name" class="block text-sm font-medium text-gray-700">First Name</label>
+                        <input id="first_name" name="first_name" type="text" required value="{{ old('first_name') }}" class="mt-1 appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm">
+                    </div>
+                    <div>
+                        <label for="last_name" class="block text-sm font-medium text-gray-700">Last Name</label>
+                        <input id="last_name" name="last_name" type="text" required value="{{ old('last_name') }}" class="mt-1 appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm">
+                    </div>
+                </div>
 
-    <div class="row justify-content-center">
-        <div class="col-md-9">
+                <div>
+                    <label for="middle_name" class="block text-sm font-medium text-gray-700">Middle Name (Optional)</label>
+                    <input id="middle_name" name="middle_name" type="text" value="{{ old('middle_name') }}" class="mt-1 appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm">
+                </div>
 
-            <div class="card shadow border-0">
-                <div class="card-body p-4">
+                <div>
+                    <label for="username" class="block text-sm font-medium text-gray-700">Username</label>
+                    <input id="username" name="username" type="text" required value="{{ old('username') }}" class="mt-1 appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm">
+                </div>
 
-                    <h3 class="mb-4 text-center">👨‍🏫 Teacher Registration</h3>
+                <div>
+                    <label for="email" class="block text-sm font-medium text-gray-700">Email Address</label>
+                    <input id="email" name="email" type="email" required value="{{ old('email') }}" class="mt-1 appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm">
+                </div>
 
-                    @if ($errors->any())
-    <div class="alert alert-danger">
-        <ul class="mb-0">
-            @foreach ($errors->all() as $error)
-                <li>{{ $error }}</li>
-            @endforeach
-        </ul>
-    </div>
-@endif
+                <div>
+                    <label for="phone_number" class="block text-sm font-medium text-gray-700">Phone Number</label>
+                    <input id="phone_number" name="phone_number" type="text" required value="{{ old('phone_number') }}" class="mt-1 appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm">
+                </div>
 
-                    <form action="{{ route('Auth.Teacher_Register.store') }}" method="POST" enctype="multipart/form-data">
-    @csrf
+                <!-- 1. Location Selection Dropdown -->
+                <div>
+                    <label for="location_id" class="block text-sm font-medium text-gray-700">Location (City/Region)</label>
+                    <select id="location_id" name="location_id" required class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        <option value="">Select Location</option>
+                        @foreach($locations as $location)
+                            <option value="{{ $location->id }}" {{ old('location_id') == $location->id ? 'selected' : '' }}>
+                                {{ $location->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
 
+                <!-- 2. Address Dropdown (Structured options based on the chosen Location) -->
+                <div>
+                    <label for="address" class="block text-sm font-medium text-gray-700">Address (District/Area)</label>
+                    <select id="address" name="address" required disabled class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-gray-100 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        <option value="">Please select a Location first</option>
+                    </select>
+                </div>
 
-                        <div class="row g-3">
+                <div>
+                    <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
+                    <input id="password" name="password" type="password" required class="mt-1 appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm">
+                </div>
 
-                            <div class="col-md-4">
-                                <label class="form-label">First Name</label>
-                                <input type="text" class="form-control" name="first_name" required>
-                            </div>
-
-                            <div class="col-md-4">
-                                <label class="form-label">Middle Name</label>
-                                <input type="text" class="form-control" name="middle_name">
-                            </div>
-
-                            <div class="col-md-4">
-                                <label class="form-label">Last Name</label>
-                                <input type="text" class="form-control" name="last_name" required>
-                            </div>
-
-                            <div class="col-md-6">
-                                <label class="form-label">Email</label>
-                                <input type="email" class="form-control" name="email" required>
-                            </div>
-
-                            <div class="col-md-6">
-                                <label class="form-label">Phone Number</label>
-                                <input type="text" class="form-control" name="phone_number" required>
-                            </div>
-
-                            <div class="col-md-6">
-                                <label class="form-label">Username</label>
-                                <input type="text" class="form-control" name="username" required>
-                            </div>
-
-                            <div class="col-md-6">
-                                <label class="form-label">Password</label>
-                                <input type="password" class="form-control" name="password" required>
-                            </div>
-
-                            <!-- LOCATION (FIXED) -->
-                            <div class="col-md-6">
-                                <label class="form-label">Location (City)</label>
-                                <select class="form-select" name="location" required>
-                                    <option value="">Select City</option>
-                                    <option value="Addis Ababa">Addis Ababa</option>
-                                    <option value="Hawassa">Hawassa</option>
-                                    <option value="Dire Dawa">Dire Dawa</option>
-                                    <option value="Mekelle">Mekelle</option>
-                                    <option value="Bahir Dar">Bahir Dar</option>
-                                    <option value="Jimma">Jimma</option>
-                                    <option value="Dessie">Dessie</option>
-                                    <option value="Gondar">Gondar</option>
-                                    <option value="Adama">Adama</option>
-                                    <option value="Harar">Harar</option>
-                                </select>
-                            </div>
-
-                            <!-- ADDRESS (STRUCTURED AREA) -->
-                            <div class="col-md-6">
-                                <label class="form-label">Area / Sub Location</label>
-                                <select class="form-select" name="address" required>
-                                    <option value="">Select Area</option>
-
-                                    <optgroup label="Addis Ababa">
-                                        <option value="Piassa">Piassa</option>
-                                        <option value="Bole">Bole</option>
-                                        <option value="Kazanchis">Kazanchis</option>
-                                        <option value="Megenagna">Megenagna</option>
-                                        <option value="Kality">Kality</option>
-                                    </optgroup>
-
-                                    <optgroup label="Hawassa">
-                                        <option value="City Center">City Center</option>
-                                        <option value="Haile Resort Area">Haile Resort Area</option>
-                                        <option value="Lake Side">Lake Side</option>
-                                    </optgroup>
-
-                                    <optgroup label="Dire Dawa">
-                                        <option value="Kezira">Kezira</option>
-                                        <option value="Sabiyan">Sabiyan</option>
-                                    </optgroup>
-
-                                    <optgroup label="Other">
-                                        <option value="Other Area">Other Area</option>
-                                    </optgroup>
-                                </select>
-                            </div>
-
-                            <div class="col-md-6">
-                                <label class="form-label">Profile Image</label>
-                                <input type="file" class="form-control" name="profile_image">
-                            </div>
-
-                            <!-- hidden system fields -->
-                            <input type="hidden" name="role_id" value="1">
-                            <input type="hidden" name="account_status" value="active">
-
-                        </div>
-
-                        <button type="submit" class="btn btn-success w-100 mt-4">
-                            Register as Teacher
-                        </button>
-
-                    </form>
-
+                <div>
+                    <label for="password_confirmation" class="block text-sm font-medium text-gray-700">Confirm Password</label>
+                    <input id="password_confirmation" name="password_confirmation" type="password" required class="mt-1 appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm">
                 </div>
             </div>
 
-        </div>
+            <div>
+                <button type="submit" class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    Register and Request Verification Code
+                </button>
+            </div>
+        </form>
     </div>
 
-</div>
+    <!-- JavaScript to dynamically update addresses based on location ID -->
+    <script>
+        // Mapped directly to the database IDs seeded (1 = Addis Ababa, 2 = Hawassa)
+        const addressOptions = {
+            "1": [
+                "Bole", 
+                "Megenagna", 
+                "Piazza (Addis)", 
+                "Arat Kilo", 
+                "Sarbet", 
+                "Kazanchis"
+            ],
+            "2": [
+                "Piassa (Hawassa)", 
+                "Atote", 
+                "Alamura", 
+                "Tabor", 
+                "Millennium", 
+                "Chefe"
+            ]
+        };
 
+        const locationSelect = document.getElementById('location_id');
+        const addressSelect = document.getElementById('address');
+        const oldAddressValue = "{{ old('address') }}";
+
+        function updateAddresses() {
+            const selectedLocationId = locationSelect.value;
+            addressSelect.innerHTML = '';
+
+            if (selectedLocationId && addressOptions[selectedLocationId]) {
+                addressSelect.disabled = false;
+                addressSelect.classList.remove('bg-gray-100');
+                addressSelect.classList.add('bg-white');
+
+                const defaultOption = document.createElement('option');
+                defaultOption.value = '';
+                defaultOption.textContent = 'Select Area / District';
+                addressSelect.appendChild(defaultOption);
+
+                addressOptions[selectedLocationId].forEach(function(address) {
+                    const option = document.createElement('option');
+                    option.value = address;
+                    option.textContent = address;
+                    
+                    if (oldAddressValue === address) {
+                        option.selected = true;
+                    }
+                    addressSelect.appendChild(option);
+                });
+            } else {
+                addressSelect.disabled = true;
+                addressSelect.classList.add('bg-gray-100');
+                addressSelect.classList.remove('bg-white');
+                
+                const option = document.createElement('option');
+                option.value = '';
+                option.textContent = 'Please select a Location first';
+                addressSelect.appendChild(option);
+            }
+        }
+
+        locationSelect.addEventListener('change', updateAddresses);
+
+        if (locationSelect.value) {
+            updateAddresses();
+        }
+    </script>
 </body>
 </html>

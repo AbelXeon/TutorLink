@@ -28,7 +28,7 @@
                             Find experienced tutors, book lessons, and improve your skills.
                         </p>
 
-                        <a href="{{route('Auth.Student_Register')}}" class="btn btn-primary w-100">
+                        <a href="" class="btn btn-primary w-100">
                             Register as Student
                         </a>
                     </div>
@@ -56,7 +56,7 @@
         <div class="mt-5">
             <p class="text-muted">
                 Already have an account?
-                <a href="{{route('Auth.Login')}}">Login</a>
+                <a href="{{route('login')}}">Login</a>
             </p>
         </div>
 

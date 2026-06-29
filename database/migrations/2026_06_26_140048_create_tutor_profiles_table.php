@@ -20,7 +20,6 @@ return new class extends Migration
         $table->string('qualification');
         $table->integer('max_students');
         $table->decimal('price_per_hour', 10, 2);
-        $table->string('grade_level');
         $table->integer('total_reviews')->default(0);
         $table->string('teaching_mode');
         $table->timestamps();

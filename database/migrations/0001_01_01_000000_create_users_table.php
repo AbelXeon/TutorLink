@@ -27,6 +27,7 @@ return new class extends Migration
         $table->string('password');
         $table->string('profile_image')->nullable();
         $table->string('account_status')->default('active');
+        $table->rememberToken(); 
         $table->timestamps();
     });
 

@@ -21,7 +21,7 @@ class User extends Authenticatable
         'phone_number',
         'username',
         'password',
-        'location_id',      // If your migration calls this "location_id", change it to "location_id"
+        'location_id',     
         'address',
         'profile_image',
         'role_id',

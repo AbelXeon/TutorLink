@@ -5,202 +5,267 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\RateLimiter; 
+use Illuminate\Support\Str;                  
 use App\Models\User;
 use App\Models\Role;
 use App\Models\Location;
+use App\Models\TutorProfile;
+use App\Models\EmailVerification;
+use App\Mail\SendVerificationCode;
+use Exception;
 
 class AuthController extends Controller
 {
-    public function Login(){
-   
-    return view('Auth.Login');
-
-    }
-
-    public function TeacherRegister(){
-
-    return view('Auth.Teacher_Register');
-    }
-
-    public function StudentRegister(){
-
-    return view('Auth.Student_Register');
-    }
-
-
-  // Processes the teacher registration form submission
-    public function StoreTeacherRegister(Request $request)
+     // Show Teacher Registration Form
+    public function showTeacherRegisterForm()
     {
-        // 1. Validate the incoming form inputs
+        // Get locations for the dropdown
+        $locations = Location::all();
+        // Uses the dot notation matching your views folder 'resources/views/auth/Teacher_Register.blade.php'
+        return view('Auth.Teacher_Register', compact('locations'));
+    }
+
+    // Handle Teacher Registration Form Submission
+    public function registerTeacher(Request $request)
+    {
         $request->validate([
-            'first_name'     => 'required|string|max:255',
-            'middle_name'    => 'nullable|string|max:255',
-            'last_name'      => 'required|string|max:255',
-            'email'          => 'required|string|email|max:255|unique:users,email',
-            'phone_number'   => 'required|string|max:20',
-            'username'       => 'required|string|max:255|unique:users,username',
-            'password'       => 'required|string|min:6',
-            'location'       => 'required|string',
-            'address'        => 'required|string',
-            'profile_image'  => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'first_name'    => 'required|string|max:255',
+            'middle_name'   => 'nullable|string|max:255',
+            'last_name'     => 'required|string|max:255',
+            'email'         => 'required|string|email|max:255|unique:users,email',
+            'phone_number'  => 'required|string|max:20',
+            'username'      => 'required|string|max:255|unique:users,username',
+            'password'      => 'required|string|min:8|confirmed',
+            'address'       => 'required|string|max:255',
+            'location_id'   => 'required|exists:locations,id', 
         ]);
 
-        // 2. Fetch or create the 'Teacher' role dynamically (since tables were reset)
-        $role = Role::firstOrCreate([
-            'role_type' => 'Teacher'
-        ]);
+        try {
+            $role = Role::where('role_type', 'Teacher')->firstOrFail();
 
-        // 3. Fetch or create the location dynamically based on the city selected
-        $location = Location::firstOrCreate([
-            'name' => $request->location
-        ]);
+            $user = User::create([
+                'role_id'        => $role->id,
+                'first_name'     => $request->first_name,
+                'middle_name'    => $request->middle_name,
+                'last_name'      => $request->last_name,
+                'email'          => $request->email,
+                'phone_number'   => $request->phone_number,
+                'username'       => $request->username,
+                'password'       => Hash::make($request->password),
+                'address'        => $request->address,
+                'location_id'    => $request->location_id,
+                'account_status' => 'unverified',
+            ]);
 
-        // 4. Handle the profile image upload if provided
-        $profileImagePath = null;
-        if ($request->hasFile('profile_image')) {
-            $profileImagePath = $request->file('profile_image')->store('profile_images', 'public');
+            $code = random_int(100000, 999999);
+
+            EmailVerification::create([
+                'user_id'       => $user->id,
+                'email'         => $user->email,
+                'code'          => $code,
+                'attempt_count' => 0,
+                'is_used'       => false,
+                'purpose'       => 'email_verification',
+                'expires_at'    => now()->addMinutes(15),
+            ]);
+
+            Mail::to($user->email)->send(new SendVerificationCode($code));
+
+            session([
+                'pending_verification_email' => $user->email,
+                'pending_verification_user_id' => $user->id
+            ]);
+
+            return redirect()->route('verify.email.form')->with('success', 'Registration submitted. Please check your email for a verification code.');
+
+        } catch (Exception $e) {
+    // This will temporarily bypass the generic message and show the real error screen
+    throw $e; 
+}
+    }
+
+    // Show Verification Form
+    public function showVerifyForm()
+    {
+        // Ensure user has a pending verification session active
+        if (!session()->has('pending_verification_email')) {
+            // FIX: Changed from Auth.teacher_Register to Auth.Teacher_Register
+            return redirect()->route('Auth.Teacher_Register')
+            ->withErrors(['error' => 'No active registration session found.']);
         }
 
-        // 5. Create the User record in the database
-        User::create([
-            'first_name'     => $request->first_name,
-            'middle_name'    => $request->middle_name,
-            'last_name'      => $request->last_name,
-            'email'          => $request->email,
-            'phone_number'   => $request->phone_number,
-            'username'       => $request->username,
-            'password'       => Hash::make($request->password), // Always hash passwords
-            'location_id'    => $location->id,                  // If migration column is named location_id, change key here
-            'address'        => $request->address,
-            'profile_image'  => $profileImagePath,
-            'role_id'        => $role->id,
-            'account_status' => 'active',
-        ]);
-
-        // 6. Redirect to the Login route with a success message
-        return redirect()->route('Auth.Login')->with('success', 'Registration successful! Please log in.');
+        return view('Auth.verify_email');
     }
 
-
-    // Processes the student registration form submission
-    public function StoreStudentRegister(Request $request)
+    // Verify Email Code
+    public function verifyEmail(Request $request)
     {
-        // 1. Validate the incoming form inputs
         $request->validate([
-            'first_name'     => 'required|string|max:255',
-            'middle_name'    => 'nullable|string|max:255',
-            'last_name'      => 'required|string|max:255',
-            'email'          => 'required|string|email|max:255|unique:users,email',
-            'phone_number'   => 'required|string|max:20',
-            'username'       => 'required|string|max:255|unique:users,username',
-            'password'       => 'required|string|min:6',
-            'location'       => 'required|string|max:255',
-            'address'        => 'required|string|max:255',
-            'profile_image'  => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'code' => 'required|numeric|digits:6',
         ]);
 
-        // 2. Retrieve the 'Student' role from the database securely 
-        // (If the Seeder wasn't run, firstOrCreate acts as a fallback to avoid errors)
-        $role = Role::firstOrCreate([
-            'role_type' => 'Student'
-        ]);
+        $email = session('pending_verification_email');
+        $userId = session('pending_verification_user_id');
 
-        // 3. Resolve the location record dynamically
-        $location = Location::firstOrCreate([
-            'name' => $request->location
-        ]);
-
-        // 4. Handle the profile image upload if provided
-        $profileImagePath = null;
-        if ($request->hasFile('profile_image')) {
-            $profileImagePath = $request->file('profile_image')->store('profile_images', 'public');
+        if (!$email || !$userId) {
+            // FIX: Changed from Auth.Teacher_register to Auth.Teacher_Register
+            return redirect()->route('Auth.Teacher_Register')->withErrors(['error' => 'Session expired. Please register again.']);
         }
 
-        // 5. Create the Student User record
-        User::create([
-            'first_name'     => $request->first_name,
-            'middle_name'    => $request->middle_name,
-            'last_name'      => $request->last_name,
-            'email'          => $request->email,
-            'phone_number'   => $request->phone_number,
-            'username'       => $request->username,
-            'password'       => Hash::make($request->password), 
-            'location_id'    => $location->id, 
-            'address'        => $request->address,
-            'profile_image'  => $profileImagePath,
-            'role_id'        => $role->id, // Handled securely on the server
-            'account_status' => 'active',
+        $verification = EmailVerification::where('user_id', $userId)
+            ->where('email', $email)
+            ->where('is_used', false)
+            ->orderBy('created_at', 'desc')
+            ->first();
+
+        if (!$verification) {
+            return back()->withErrors(['code' => 'No verification code found. Please request a new one.']);
+        }
+
+        if (now()->greaterThan($verification->expires_at)) {
+            return back()->withErrors(['code' => 'This verification code has expired.']);
+        }
+
+        if ($verification->attempt_count >= 5) {
+            return back()->withErrors(['code' => 'Too many failed verification attempts. Please contact support or sign up again.']);
+        }
+
+        if ($verification->code !== $request->code) {
+            $verification->increment('attempt_count');
+            return back()->withErrors(['code' => 'Invalid verification code.']);
+        }
+
+        $verification->update([
+            'is_used' => true,
+            'verified_at' => now(),
         ]);
 
-        // 6. Redirect to the Login route with a success message
-        return redirect()->route('Auth.Login')->with('success', 'Student registration successful! Please log in.');
+        $user = User::find($userId);
+        if ($user) {
+            $user->update([
+                'account_status' => 'active'
+            ]);
+
+            TutorProfile::create([
+                'user_id' => $user->id,
+                'bio' => '',
+                'experience_years' => 0,
+                'qualification' => '',
+                'max_students' => 1,
+                'price_per_hour' => 0.00,
+                'total_reviews' => 0,
+                'availability_status' => 'inactive',
+                'teaching_mode' => 'online',
+            ]);
+
+            session()->forget(['pending_verification_email', 'pending_verification_user_id']);
+
+            Auth::login($user);
+
+            return redirect()->route('login')->with('success', 'Email verified successfully! Welcome to your dashboard.');
+        }
+
+        return redirect()->route('Auth.Teacher_Register')
+        ->withErrors(['error' => 'User not found.']);
     }
 
-    // Handles the login request
-    public function StoreLogin(Request $request)
+    // 1. Show the Login Form
+    public function showLoginForm()
     {
-        // 1. Validate inputs
+        return view('Auth.Login');
+    }
+
+    // Process Secure Login with 5-Attempt Rate Limiting
+    public function login(Request $request)
+    {
         $request->validate([
-            'login'    => 'required|string',
-            'password' => 'required|string',
+            'login_input' => 'required|string',
+            'password'    => 'required|string',
         ]);
 
-        // 2. Identify if the user logged in using Email or Username
-        $loginField = filter_var($request->login, FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
+        // Generate a unique key for this user + IP combination
+        $throttleKey = Str::lower($request->input('login_input')) . '|' . $request->ip();
+
+        // 1. Check if the user has exceeded 5 failed attempts
+        if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
+            $secondsLeft = RateLimiter::availableIn($throttleKey);
+            $hoursLeft = ceil($secondsLeft / 3600); // Convert seconds to hours
+
+            return back()->withInput()->withErrors([
+                'login_input' => "Too many login attempts. For security, your account is locked. Please try again in {$hoursLeft} hours."
+            ]);
+        }
+
+        $loginField = filter_var($request->login_input, FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
 
         $credentials = [
-            $loginField => $request->login,
+            $loginField => $request->login_input,
             'password'  => $request->password,
         ];
 
-        // 3. Attempt authentication
-        if (Auth::attempt($credentials)) {
-            // Regenerate the session to prevent session fixation attacks
-            $request->session()->regenerate();
+        $remember = $request->has('remember');
 
-            // Get the authenticated user
+        // Attempt Login securely
+        if (Auth::attempt($credentials, $remember)) {
             $user = Auth::user();
 
-            // 4. Fetch the user's role from the roles database table
+            if ($user->account_status === 'unverified') {
+                Auth::logout();
+                return back()->withInput()->withErrors([
+                    'login_input' => 'Your email is unverified. Please verify your email first.'
+                ]);
+            }
+
+            // Success! Clear the rate limiter attempts
+            RateLimiter::clear($throttleKey);
+
+            $request->session()->regenerate();
+  // Check if the logged-in user is a Teacher
             $role = Role::find($user->role_id);
-
-            // 5. Redirect based on role
-            if ($role && $role->role_type === 'Teacher') {
-                // Check if this teacher has already completed their profile
-                $hasProfile = \App\Models\TutorProfile::where('user_id', $user->id)->exists();
-
-                if ($hasProfile) {
-                    // Profile exists: Take them to the dashboard
-                    return redirect()->route('Teacher.Teacher_Dashboard')
-                        ->with('success', 'Welcome back!');
+            if ($role && strtolower($role->role_type) === 'teacher') {
+                
+                // Fetch their tutor profile
+                $profile = TutorProfile::where('user_id', $user->id)->first();
+                
+                // If they don't have a profile yet, or if their Bio is still blank, send them to the setup page
+                if (!$profile || empty($profile->bio)) {
+                    return redirect()->route('tutor.profile.edit')->with('success', 'Please complete your tutor profile details.');
                 }
 
-                // Profile does NOT exist: Take them to fill out their profile
-                return redirect()->route('Profile.Tutor_Profile_make')
-                    ->with('success', 'Logged in successfully! Please complete your profile information.');
+                // If profile is already complete, send them to their dashboard
+                return redirect()->intended(route('tutor.dashboard'))->with('success', 'Welcome back!');
             }
 
-            
-            if ($role && $role->role_type === 'Student') {
-                // Redirect Student to their Student Dashboard
-                return redirect()->route('Student.Student_Dashboard')
-                    ->with('success', 'Logged in successfully!');
-            }
-
-        // 6. If login fails, redirect back with error messages
-        return back()->withErrors([
-            'login' => 'The provided credentials do not match our records.',
-        ])->onlyInput('login');
-        }
+            // If user is not a teacher, or after teacher handling, send to generic landing
+            return redirect()->intended(route('Landing'))->with('success', 'Welcome back!');
         }
 
 
-    public function Logout(Request $request)
-  {
-    Auth::logout();
-    $request->session()->invalidate();
-    $request->session()->regenerateToken();
+        // 2. Failure! Record the attempt. 
+        // Lockout duration set to 86400 seconds (24 Hours)
+        RateLimiter::hit($throttleKey, 86400); 
 
-    return redirect()->route('Auth.Login')->with('success', 'You have been logged out.');
-   }
-}
+        $attemptsLeft = RateLimiter::retriesLeft($throttleKey, 5);
+
+        return back()->withInput()->withErrors([
+            'login_input' => "These credentials do not match our records. You have {$attemptsLeft} attempts remaining.",
+        ]);
+    }
+
+    
+    // 3. Process Logout Safely
+    public function logout(Request $request)
+    {
+        Auth::logout();
+
+
+        // Invalidate current session and regenerate token
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return redirect()->route('Landing')->with('success', 'Logged out successfully.');
+    }
+  }
+

@@ -16,11 +16,9 @@ return new class extends Migration
             $table->foreignId('tutor_profile_id')
           ->constrained('tutor_profiles')
           ->cascadeOnDelete();
-
             $table->foreignId('grade_level_id')
           ->constrained('grade_levels')
           ->cascadeOnDelete();
-
             $table->timestamps();
         });
     }

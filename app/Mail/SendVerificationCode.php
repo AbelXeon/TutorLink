@@ -1,0 +1,63 @@
+<?php
+
+namespace App\Mail;
+
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Mail\Mailable;
+use Illuminate\Mail\Mailables\Attachment;
+use Illuminate\Mail\Mailables\Content;
+use Illuminate\Mail\Mailables\Envelope;
+use Illuminate\Queue\SerializesModels;
+
+class SendVerificationCode extends Mailable
+{
+    use Queueable, SerializesModels;
+
+    public $code;
+
+    /**
+     * Create a new message instance.
+     */
+    public function __construct($code)
+    {
+        $this->code = $code;
+    }
+
+
+        public function build()
+    {
+        return $this->subject('Verify Your Email Address')
+                    ->html("<p>Thank you for registering. Your verification code is: <strong>{$this->code}</strong></p><p>This code will expire in 15 minutes.</p>");
+    }
+
+    /**
+     * Get the message envelope.
+     */
+    public function envelope(): Envelope
+    {
+        return new Envelope(
+            subject: 'Send Verification Code',
+        );
+    }
+
+    /**
+     * Get the message content definition.
+     */
+    public function content(): Content
+    {
+        return new Content(
+            view: 'view.name',
+        );
+    }
+
+    /**
+     * Get the attachments for the message.
+     *
+     * @return array<int, Attachment>
+     */
+    public function attachments(): array
+    {
+        return [];
+    }
+}

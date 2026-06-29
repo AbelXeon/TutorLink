@@ -15,8 +15,27 @@ class TutorProfile extends Model
         'qualification',
         'max_students',
         'price_per_hour',
-        'grade_level',
         'total_reviews',
-        'mode',
+        'teaching_mode',
     ];
+
+     public function gradeLevels()
+    {
+        return $this->belongsToMany(
+            GradeLevels::class, 
+            'tutor_grade_levels', 
+            'tutor_profile_id', 
+            'grade_level_id'
+        );
+}
+
+ public function subjects()
+{
+    return $this->belongsToMany(
+        Subjects::class, 
+        'tutor_subjects', 
+        'tutor_profile_id', 
+        'subject_id'
+    );
+}
 }
