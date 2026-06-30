@@ -28,7 +28,7 @@
                             Find experienced tutors, book lessons, and improve your skills.
                         </p>
 
-                        <a href="" class="btn btn-primary w-100">
+                        <a href="{{route('Auth.Student_Register')}}" class="btn btn-primary w-100">
                             Register as Student
                         </a>
                     </div>

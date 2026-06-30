@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter; 
+use Illuminate\Validation\Rules\Password; 
 use Illuminate\Support\Str;                  
 use App\Models\User;
 use App\Models\Role;
@@ -35,9 +36,15 @@ class AuthController extends Controller
             'middle_name'   => 'nullable|string|max:255',
             'last_name'     => 'required|string|max:255',
             'email'         => 'required|string|email|max:255|unique:users,email',
-            'phone_number'  => 'required|string|max:20',
-            'username'      => 'required|string|max:255|unique:users,username',
-            'password'      => 'required|string|min:8|confirmed',
+            'phone_number'  => 'required|string|max:20|unique:users,phone_number',
+            'username'      => 'required|string|min:5|max:16|unique:users,username',
+            'password'      => ['required','string','min:8','confirmed',
+                   Password::min(8)
+                    ->max(16)
+                    ->mixedCase() 
+                    ->numbers() 
+                    ->symbols() 
+            ],
             'address'       => 'required|string|max:255',
             'location_id'   => 'required|exists:locations,id', 
         ]);
@@ -99,7 +106,9 @@ class AuthController extends Controller
         return view('Auth.verify_email');
     }
 
-    // Verify Email Code
+
+
+
     public function verifyEmail(Request $request)
     {
         $request->validate([
@@ -110,7 +119,6 @@ class AuthController extends Controller
         $userId = session('pending_verification_user_id');
 
         if (!$email || !$userId) {
-            // FIX: Changed from Auth.Teacher_register to Auth.Teacher_Register
             return redirect()->route('Auth.Teacher_Register')->withErrors(['error' => 'Session expired. Please register again.']);
         }
 
@@ -148,28 +156,117 @@ class AuthController extends Controller
                 'account_status' => 'active'
             ]);
 
-            TutorProfile::create([
-                'user_id' => $user->id,
-                'bio' => '',
-                'experience_years' => 0,
-                'qualification' => '',
-                'max_students' => 1,
-                'price_per_hour' => 0.00,
-                'total_reviews' => 0,
-                'availability_status' => 'inactive',
-                'teaching_mode' => 'online',
-            ]);
+            // SECURE CHECK: Only create a TutorProfile if the user has the "Teacher" role
+            $teacherRole = Role::where('role_type', 'Teacher')->first();
+            if ($teacherRole && $user->role_id === $teacherRole->id) {
+                TutorProfile::create([
+                    'user_id' => $user->id,
+                    'bio' => '',
+                    'experience_years' => 0,
+                    'qualification' => '',
+                    'max_students' => 1,
+                    'price_per_hour' => 0.00,
+                    'total_reviews' => 0,
+                    'availability_status' => 'inactive',
+                    'teaching_mode' => 'online',
+                ]);
+            }
 
             session()->forget(['pending_verification_email', 'pending_verification_user_id']);
 
-            //Auth::login($user);
-
-            return redirect()->route('login')->with('success', 'Email verified successfully! Welcome to your dashboard.');
+            return redirect()->route('login')->with('success', 'Email verified successfully! Please log in to complete your profile.');
         }
 
         return redirect()->route('Auth.Teacher_Register')
-        ->withErrors(['error' => 'User not found.']);
+            ->withErrors(['error' => 'User not found.']);
     }
+
+
+    // 1. Show Student Registration Form
+    public function showStudentRegisterForm()
+    {
+        $locations = Location::all();
+        return view('Auth.Student_Register', compact('locations'));
+    }
+
+    // 2. Handle Student Registration Form Submission
+    public function registerStudent(Request $request)
+    {
+        $request->validate([
+            'first_name'    => 'required|string|max:255',
+            'middle_name'   => 'nullable|string|max:255',
+            'last_name'     => 'required|string|max:255',
+            'email'         => 'required|string|email|max:255|unique:users,email',
+            'phone_number'  => 'required|string|max:20|unique:users,phone_number',
+            'username'      => 'required|string|min:5|max:16|unique:users,username',
+            'password'      => [
+                'required',
+                'string',
+                'confirmed',
+                \Illuminate\Validation\Rules\Password::min(8)
+                    ->max(16)
+                    ->mixedCase()
+                    ->numbers()
+                    ->symbols()
+            ],
+            'address'       => 'required|string|max:255',
+            'location_id'   => 'required|exists:locations,id', 
+        ]);
+
+        try {
+            // Fetch the 'Student' role (assuming capitalized 'Student')
+            $role = Role::where('role_type', 'Student')->firstOrFail();
+
+            $user = User::create([
+                'role_id'        => $role->id,
+                'first_name'     => $request->first_name,
+                'middle_name'    => $request->middle_name,
+                'last_name'      => $request->last_name,
+                'email'          => $request->email,
+                'phone_number'   => $request->phone_number,
+                'username'       => $request->username,
+                'password'       => Hash::make($request->password),
+                'address'        => $request->address,
+                'location_id'    => $request->location_id,
+                'account_status' => 'unverified',
+            ]);
+
+            $code = random_int(100000, 999999);
+
+            EmailVerification::create([
+                'user_id'       => $user->id,
+                'email'         => $user->email,
+                'code'          => $code,
+                'attempt_count' => 0,
+                'is_used'       => false,
+                'purpose'       => 'email_verification',
+                'expires_at'    => now()->addMinutes(15),
+            ]);
+
+            Mail::to($user->email)->send(new SendVerificationCode($code));
+
+            session([
+                'pending_verification_email' => $user->email,
+                'pending_verification_user_id' => $user->id
+            ]);
+
+            return redirect()->route('verify.email.form')->with('success', 'Registration submitted. Please check your email for a verification code.');
+
+        } catch (Exception $e) {
+            throw $e; 
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+
 
     // 1. Show the Login Form
     public function showLoginForm()

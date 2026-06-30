@@ -148,6 +148,37 @@
                     @endif
                 </div>
 
+                
+<!-- NEW: Weekly Availability Schedule displays on the Dashboard -->
+<div class="mt-8 border-t border-gray-100 pt-8">
+    <h4 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">Weekly Availability Schedule</h4>
+    
+    @if($schedules->count() > 0)
+        <div class="overflow-hidden border border-gray-200 rounded-md">
+            <table class="min-w-full divide-y divide-gray-200 bg-gray-50">
+                <thead class="bg-gray-100">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Day</th>
+                        <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Start Time</th>
+                        <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">End Time</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200 bg-white text-sm text-gray-700">
+                    @foreach($schedules as $sched)
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap font-semibold text-gray-900">{{ $sched->day_of_week }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">{{ \Carbon\Carbon::parse($sched->start_time)->format('g:i A') }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">{{ \Carbon\Carbon::parse($sched->end_time)->format('g:i A') }}</td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    @else
+        <span class="text-sm text-gray-500 italic">No availability slots configured yet. Click "Edit Profile" to add.</span>
+    @endif
+</div>
+
                 <!-- Tutor Biography -->
                 <div class="mt-8 border-t border-gray-100 pt-8">
                     <h4 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">About Me / Professional Bio</h4>

@@ -24,12 +24,15 @@ class ProfileController extends Controller
 
         // Load categories with their respective subjects securely in one query
         $categories = Categories::with('subjects')->get();
+          $schedules = $user->schedules;
 
         if (empty($tutorProfile->bio)) {
-            return view('Profile.Tutor_Profile_make', compact('user', 'tutorProfile', 'gradeLevels', 'categories'));
+            return view('Profile.Tutor_Profile_make',
+             compact('user', 'tutorProfile', 'gradeLevels', 'categories','schedules'));
         }
 
-        return view('Teacher.Teacher_Profile_Edit', compact('user', 'tutorProfile', 'gradeLevels', 'categories'));
+        return view('Teacher.Teacher_Profile_Edit', 
+        compact('user', 'tutorProfile', 'gradeLevels', 'categories','schedules'));
     }
 
 
@@ -60,10 +63,13 @@ class ProfileController extends Controller
             'grade_levels'     => 'required|array',
             'grade_levels.*'   => 'exists:grade_levels,id',
             'profile_image'    => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-            
-            // New Subjects validation
             'subjects'         => 'required|array',
-            'subjects.*'       => 'exists:subjects,id', // Strict verification to ensure no fake IDs are submitted
+            'subjects.*'       => 'exists:subjects,id', 
+
+             'schedules'            => 'nullable|array',
+            'schedules.*.day'      => 'required|string|in:Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday',
+            'schedules.*.start'    => 'required|date_format:H:i',
+            'schedules.*.end'      => 'required|date_format:H:i|after:schedules.*.start',
         ]);
 
         // Securely verify that all selected subjects belong to the same category
@@ -108,7 +114,23 @@ class ProfileController extends Controller
 
         // Securely sync relationships
         $profile->gradeLevels()->sync($request->grade_levels);
-        $profile->subjects()->sync($request->subjects); // <-- NEW: Syncs selected subjects in pivot table
+        $profile->subjects()->sync($request->subjects); 
+
+
+         DB::transaction(function () use ($user, $request) {
+            $user->schedules()->delete();
+
+            if ($request->has('schedules')) {
+                foreach ($request->schedules as $sched) {
+                    Schedule::create([
+                        'tutor_id'    => $user->id,
+                        'day_of_week' => $sched['day'],
+                        'start_time'  => $sched['start'],
+                        'end_time'    => $sched['end']
+                    ]);
+                }
+            }
+            });
 
         RateLimiter::hit($limiterKey, 86400);
 
@@ -121,9 +143,22 @@ class ProfileController extends Controller
         $user = Auth::user();
         $tutorProfile = TutorProfile::where('user_id', $user->id)->firstOrFail();
         $gradeLevels = GradeLevels::all();
-        $categories = Categories::with('subjects')->get(); // Fetch categories to display on Dashboard
+        $categories = Categories::with('subjects')->get(); 
 
-        return view('Teacher.Teacher_Dashboard', compact('user', 'tutorProfile', 'gradeLevels', 'categories'));
+             
+        // Load schedules to display on Dashboard
+        $schedules = $user->schedules()->orderBy(DB::raw("CASE 
+            WHEN day_of_week = 'Monday' THEN 1
+            WHEN day_of_week = 'Tuesday' THEN 2
+            WHEN day_of_week = 'Wednesday' THEN 3
+            WHEN day_of_week = 'Thursday' THEN 4
+            WHEN day_of_week = 'Friday' THEN 5
+            WHEN day_of_week = 'Saturday' THEN 6
+            WHEN day_of_week = 'Sunday' THEN 7
+        END"))->get();
+
+        return view('Teacher.Teacher_Dashboard', 
+        compact('user', 'tutorProfile', 'gradeLevels', 'categories','schedules'));
     }
 
 

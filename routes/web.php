@@ -20,8 +20,23 @@ Route::get('/', function () {
 
 Route::middleware('guest')->group(function () {
     // Teacher Registration
-    Route::get('/Auth/teacher_Register', [AuthController::class, 'showTeacherRegisterForm'])->name('Auth.Teacher_Register');
-    Route::post('/register/teacher', [AuthController::class, 'registerTeacher'])->name('register.teacher');
+    Route::get('/Auth/teacher_Register', 
+    [AuthController::class, 'showTeacherRegisterForm'])
+    ->name('Auth.Teacher_Register');
+
+    Route::post('/register/teacher', 
+    [AuthController::class, 'registerTeacher'])->name('register.teacher');
+
+    
+      // Student Registration
+    Route::get('/Auth/student_Register', 
+    [AuthController::class, 'showStudentRegisterForm'])
+    ->name('Auth.Student_Register'); 
+
+    Route::post('/register/student', 
+    [AuthController::class, 'registerStudent'])
+    ->name('register.student'); 
+
 
     // Email Verification
     Route::get('/verify-email', [AuthController::class, 'showVerifyForm'])

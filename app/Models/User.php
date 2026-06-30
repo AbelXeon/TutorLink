@@ -28,6 +28,11 @@ class User extends Authenticatable
         'account_status',
     ];
 
+
+    public function schedules()
+    {
+        return $this->hasMany(\App\Models\Schedule::class, 'tutor_id');
+    }
   
     /**
      * The attributes that should be hidden for serialization.

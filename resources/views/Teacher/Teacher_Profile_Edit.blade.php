@@ -101,13 +101,12 @@
                     </div>
                 </div>
 
-                <!-- Category Dropdown Selection -->
+                <!-- Category Selection -->
                 <div>
                     <label for="category_id" class="block text-sm font-medium text-gray-700">Teaching Category (Select One)</label>
                     <select id="category_id" name="category_id" required class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 sm:text-sm">
                         <option value="">Select Category</option>
                         @foreach($categories as $category)
-                            <!-- Determine pre-selected category based on first associated subject -->
                             <option value="{{ $category->id }}" 
                                 {{ ($tutorProfile->subjects->first() && $tutorProfile->subjects->first()->category_id == $category->id) ? 'selected' : '' }}>
                                 {{ $category->name }}
@@ -116,7 +115,7 @@
                     </select>
                 </div>
 
-                <!-- Subjects list (Dynamic Checkboxes - Hidden until category is selected) -->
+                <!-- Subjects list -->
                 <div id="subjects_section" class="hidden">
                     <label class="block text-sm font-medium text-gray-700 mb-2">Select Subjects (Choose up to 3)</label>
                     <div id="checkbox_container" class="grid grid-cols-1 md:grid-cols-2 gap-2 bg-gray-50 p-4 rounded-md border border-gray-200">
@@ -136,6 +135,40 @@
                     <p id="warning_text" class="mt-2 text-xs text-red-600 hidden">You can select a maximum of 3 subjects.</p>
                 </div>
 
+                <!-- DYNAMIC WEEKLY SCHEDULE BUILDER -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Weekly Availability Schedule</label>
+                    <div id="schedule_wrapper" class="space-y-3 bg-gray-50 p-4 rounded-md border border-gray-200">
+                        
+                        <!-- Existing Schedules (populated if editing) -->
+                        @foreach($schedules as $index => $sched)
+                            <div class="flex flex-wrap items-center gap-3 schedule-row pb-3 border-b border-gray-200 last:border-b-0 last:pb-0">
+                                <select name="schedules[{{ $index }}][day]" required class="block py-1.5 px-3 border border-gray-300 bg-white rounded-md text-sm focus:outline-none focus:ring-indigo-500">
+                                    <option value="Monday" {{ $sched->day_of_week == 'Monday' ? 'selected' : '' }}>Monday</option>
+                                    <option value="Tuesday" {{ $sched->day_of_week == 'Tuesday' ? 'selected' : '' }}>Tuesday</option>
+                                    <option value="Wednesday" {{ $sched->day_of_week == 'Wednesday' ? 'selected' : '' }}>Wednesday</option>
+                                    <option value="Thursday" {{ $sched->day_of_week == 'Thursday' ? 'selected' : '' }}>Thursday</option>
+                                    <option value="Friday" {{ $sched->day_of_week == 'Friday' ? 'selected' : '' }}>Friday</option>
+                                    <option value="Saturday" {{ $sched->day_of_week == 'Saturday' ? 'selected' : '' }}>Saturday</option>
+                                    <option value="Sunday" {{ $sched->day_of_week == 'Sunday' ? 'selected' : '' }}>Sunday</option>
+                                </select>
+
+                                <span class="text-xs text-gray-500">Start:</span>
+                                <input type="time" name="schedules[{{ $index }}][start]" required value="{{ \Carbon\Carbon::parse($sched->start_time)->format('H:i') }}" class="py-1 px-2 border border-gray-300 rounded-md text-sm">
+                                
+                                <span class="text-xs text-gray-500">End:</span>
+                                <input type="time" name="schedules[{{ $index }}][end]" required value="{{ \Carbon\Carbon::parse($sched->end_time)->format('H:i') }}" class="py-1 px-2 border border-gray-300 rounded-md text-sm">
+
+                                <button type="button" class="remove-schedule-btn text-xs text-red-600 hover:text-red-800 font-semibold ml-auto">Remove</button>
+                            </div>
+                        @endforeach
+
+                    </div>
+                    <button type="button" id="add_schedule_btn" class="mt-3 inline-flex items-center px-3 py-1.5 border border-indigo-600 text-xs font-semibold rounded-md text-indigo-600 bg-white hover:bg-indigo-50 transition">
+                        + Add Available Day/Time
+                    </button>
+                </div>
+
                 <!-- Bio -->
                 <div>
                     <label for="bio" class="block text-sm font-medium text-gray-700">About Me / Bio</label>
@@ -151,7 +184,7 @@
         </form>
     </div>
 
-    <!-- JAVASCRIPT FOR DYNAMIC CATEGORY AND 3-SUBJECT LIMITATION -->
+    <!-- JAVASCRIPT FOR CATEGORY MATCHING, 3-SUBJECT LIMITATION, AND DYNAMIC SCHEDULE ROWS -->
     <script>
         const categorySelect = document.getElementById('category_id');
         const subjectsSection = document.getElementById('subjects_section');
@@ -159,6 +192,7 @@
         const wrappers = document.querySelectorAll('.subject-checkbox-wrapper');
         const checkboxes = document.querySelectorAll('.subject-checkbox');
 
+        // Dynamic Subjects Selection based on Category choice
         function updateSubjectsDisplay() {
             const selectedCategoryId = categorySelect.value;
 
@@ -170,7 +204,6 @@
                         wrapper.classList.remove('hidden');
                     } else {
                         wrapper.classList.add('hidden');
-                        // Uncheck subjects belonging to other categories if category changes
                         const checkbox = wrapper.querySelector('.subject-checkbox');
                         checkbox.checked = false;
                     }
@@ -181,13 +214,12 @@
             }
         }
 
-        // Enforce 3-Subject Limitation
         checkboxes.forEach(checkbox => {
             checkbox.addEventListener('change', function() {
                 const checkedCount = document.querySelectorAll('.subject-checkbox:checked').length;
 
                 if (checkedCount > 3) {
-                    this.checked = false; // Block checking
+                    this.checked = false; 
                     warningText.classList.remove('hidden');
                 } else {
                     warningText.classList.add('hidden');
@@ -196,10 +228,59 @@
         });
 
         categorySelect.addEventListener('change', updateSubjectsDisplay);
-
-        // Run on initial load to handle old inputs
         if (categorySelect.value) {
             updateSubjectsDisplay();
+        }
+
+        // --- DYNAMIC SCHEDULE ROW GENERATION ---
+        const scheduleWrapper = document.getElementById('schedule_wrapper');
+        const addScheduleBtn = document.getElementById('add_schedule_btn');
+        let rowIndex = {{ $schedules->count() }}; // Track indexes safely
+
+        addScheduleBtn.addEventListener('click', function() {
+            const row = document.createElement('div');
+            row.className = "flex flex-wrap items-center gap-3 schedule-row pb-3 border-b border-gray-200 last:border-b-0 last:pb-0";
+            
+            row.innerHTML = `
+                <select name="schedules[${rowIndex}][day]" required class="block py-1.5 px-3 border border-gray-300 bg-white rounded-md text-sm focus:outline-none focus:ring-indigo-500">
+                    <option value="Monday">Monday</option>
+                    <option value="Tuesday">Tuesday</option>
+                    <option value="Wednesday">Wednesday</option>
+                    <option value="Thursday">Thursday</option>
+                    <option value="Friday">Friday</option>
+                    <option value="Saturday">Saturday</option>
+                    <option value="Sunday">Sunday</option>
+                </select>
+
+                <span class="text-xs text-gray-500">Start:</span>
+                <input type="time" name="schedules[${rowIndex}][start]" required class="py-1 px-2 border border-gray-300 rounded-md text-sm">
+                
+                <span class="text-xs text-gray-500">End:</span>
+                <input type="time" name="schedules[${rowIndex}][end]" required class="py-1 px-2 border border-gray-300 rounded-md text-sm">
+
+                <button type="button" class="remove-schedule-btn text-xs text-red-600 hover:text-red-800 font-semibold ml-auto">Remove</button>
+            `;
+
+            scheduleWrapper.appendChild(row);
+            rowIndex++;
+            toggleScheduleWrapperPlaceholder();
+        });
+
+        // Event delegation for removal
+        scheduleWrapper.addEventListener('click', function(e) {
+            if (e.target.classList.contains('remove-schedule-btn')) {
+                e.target.closest('.schedule-row').remove();
+                toggleScheduleWrapperPlaceholder();
+            }
+        });
+
+        function toggleScheduleWrapperPlaceholder() {
+            if (scheduleWrapper.children.length === 0) {
+                scheduleWrapper.innerHTML = `<p class="text-sm text-gray-500 italic text-center py-2" id="no-schedule-text">No available slots added yet. Click "+ Add Available Day/Time" below.</p>`;
+            } else {
+                const placeholder = document.getElementById('no-schedule-text');
+                if (placeholder) placeholder.remove();
+            }
         }
     </script>
 </body>

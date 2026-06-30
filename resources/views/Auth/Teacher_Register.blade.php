@@ -48,6 +48,9 @@
                 <div>
                     <label for="username" class="block text-sm font-medium text-gray-700">Username</label>
                     <input id="username" name="username" type="text" required value="{{ old('username') }}" class="mt-1 appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm">
+                      <p class="mt-1 text-xs text-gray-500">
+                   Must be unique and between 5 and 16 characters.
+                      </p>
                 </div>
 
                 <div>
@@ -58,6 +61,9 @@
                 <div>
                     <label for="phone_number" class="block text-sm font-medium text-gray-700">Phone Number</label>
                     <input id="phone_number" name="phone_number" type="text" required value="{{ old('phone_number') }}" class="mt-1 appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm">
+                     <p class="mt-1 text-xs text-gray-500">
+                     Must be a unique number. Cannot be shared with another account.
+                       </p>
                 </div>
 
                 <!-- 1. Location Selection Dropdown -->
@@ -84,6 +90,9 @@
                 <div>
                     <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
                     <input id="password" name="password" type="password" required class="mt-1 appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm">
+                    <p class="mt-1 text-xs text-gray-500">
+                       Must be 8–16 characters and contain at least one uppercase letter, one lowercase letter, one number, and one special character (e.g., @, #, $, %).
+                     </p>
                 </div>
 
                 <div>
