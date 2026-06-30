@@ -66,6 +66,57 @@
                     </div>
                 </div>
 
+
+                <!-- NEW: Pending Lesson Requests Panel -->
+                <div class="mt-8 border-t border-gray-100 pt-8">
+                    <h4 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">Pending Booking Requests</h4>
+                    
+                    @if($pendingBookings->count() > 0)
+                        <div class="space-y-4">
+                            @foreach($pendingBookings as $booking)
+                                <div class="bg-gray-50 p-5 rounded-md border border-gray-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                                    <div class="space-y-1">
+                                        <p class="text-sm text-gray-900 font-bold">
+                                            Request from: {{ $booking->student->first_name }} {{ $booking->student->last_name }}
+                                        </p>
+                                        <p class="text-xs text-indigo-600 font-semibold">
+                                            📅 {{ \Carbon\Carbon::parse($booking->session_date)->format('M d, Y') }} at 
+                                            {{ \Carbon\Carbon::parse($booking->start_time)->format('g:i A') }} - 
+                                            {{ \Carbon\Carbon::parse($booking->end_time)->format('g:i A') }}
+                                        </p>
+                                        @if($booking->note)
+                                            <p class="text-xs text-gray-600 bg-white p-2.5 rounded border border-gray-100 mt-2 italic max-w-lg">
+                                                "{{ $booking->note }}"
+                                            </p>
+                                        @endif
+                                    </div>
+
+                                    <!-- Accept / Decline Action Buttons -->
+                                    <div class="flex gap-2 flex-shrink-0 w-full md:w-auto">
+                                        <!-- Accept Form -->
+                                        <form action="{{ route('bookings.accept', $booking->id) }}" method="POST" class="w-1/2 md:w-auto">
+                                            @csrf
+                                            <button type="submit" class="w-full py-2 px-4 border border-transparent text-xs font-bold rounded-md text-white bg-green-600 hover:bg-green-700 transition shadow-sm">
+                                                Accept
+                                            </button>
+                                        </form>
+
+                                        <!-- Decline Form -->
+                                        <form action="{{ route('bookings.reject', $booking->id) }}" method="POST" class="w-1/2 md:w-auto">
+                                            @csrf
+                                            <button type="submit" class="w-full py-2 px-4 border border-gray-300 text-xs font-bold rounded-md text-red-600 bg-white hover:bg-red-50 transition">
+                                                Decline
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    @else
+                        <p class="text-sm text-gray-500 italic">No pending lesson requests at the moment.</p>
+                    @endif
+                </div>
+
                 <!-- Selected Grade Levels as styled badges -->
                 <div class="mt-8 border-t border-gray-100 pt-8">
                     <h4 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">Grade Levels You Teach</h4>
@@ -102,6 +153,8 @@
                         <span class="text-sm text-gray-500 italic">No teaching specialty selected yet.</span>
                     @endif
                 </div>
+
+                
 
                 
 <!-- NEW: Weekly Availability Schedule displays on the Dashboard -->

@@ -56,4 +56,17 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+       // NEW: Defines the relationship to the Location model
+    public function location()
+    {
+        return $this->belongsTo(Location::class, 'location_id');
+    }
+
+      public function role()
+    {
+        return $this->belongsTo(Role::class, 'role_id');
+    }
+
+
 }

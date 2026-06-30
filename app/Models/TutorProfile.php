@@ -19,6 +19,11 @@ class TutorProfile extends Model
         'teaching_mode',
     ];
 
+      public function user()
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
      public function gradeLevels()
     {
         return $this->belongsToMany(

@@ -13,7 +13,7 @@
         
         <!-- Primary Action: Browse Teachers -->
         <div class="mt-6">
-            <a href="#" class="inline-flex items-center px-6 py-3 border border-transparent text-sm font-semibold rounded-md text-indigo-700 bg-white hover:bg-indigo-50 transition shadow-sm">
+            <a href="{{route('tutors.browse')}}" class="inline-flex items-center px-6 py-3 border border-transparent text-sm font-semibold rounded-md text-indigo-700 bg-white hover:bg-indigo-50 transition shadow-sm">
                 🔍 Browse & Find Tutors
             </a>
         </div>
@@ -39,16 +39,28 @@
                         <tbody class="divide-y divide-gray-200 bg-white text-sm">
                             @foreach($bookings as $booking)
                                 <tr>
+                                    <!-- FIXED: Accessing $booking->tutor property directly -->
                                     <td class="px-6 py-4 whitespace-nowrap font-semibold text-gray-900">
-                                        {{ $booking->tutor->user->first_name }} {{ $booking->tutor->user->last_name }}
+                                        {{ $booking->tutor->first_name }} {{ $booking->tutor->last_name }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-gray-500">
-                                        {{ $booking->session_date }} at {{ $booking->start_time }}
+                                        {{ \Carbon\Carbon::parse($booking->session_date)->format('M d, Y') }} at 
+                                        {{ \Carbon\Carbon::parse($booking->start_time)->format('g:i A') }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">
-                                            {{ $booking->status }}
-                                        </span>
+                                        @if($booking->status == 'pending')
+                                            <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800 capitalize">
+                                                {{ $booking->status }}
+                                            </span>
+                                        @elseif($booking->status == 'accepted')
+                                            <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-800 capitalize">
+                                                {{ $booking->status }}
+                                            </span>
+                                        @else
+                                            <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-800 capitalize">
+                                                {{ $booking->status }}
+                                            </span>
+                                        @endif
                                     </td>
                                 </tr>
                             @endforeach
@@ -58,7 +70,7 @@
             @else
                 <div class="text-center py-10 bg-gray-50 rounded-md border border-dashed border-gray-200">
                     <p class="text-gray-500 text-sm">You haven't booked any tutoring sessions yet.</p>
-                    <a href="#" class="mt-3 inline-flex items-center text-xs font-bold text-indigo-600 hover:text-indigo-500">
+                    <a href="{{route('tutors.browse')}}" class="mt-3 inline-flex items-center text-xs font-bold text-indigo-600 hover:text-indigo-500">
                         Find a tutor now &rarr;
                     </a>
                 </div>
@@ -76,8 +88,10 @@
                         <span class="text-xs text-gray-500 font-medium">Total Lessons</span>
                     </div>
                     <div class="bg-green-50 p-4 rounded-md">
-                        <span class="block text-2xl font-extrabold text-green-600">0</span>
-                        <span class="text-xs text-gray-500 font-medium">Completed</span>
+                        <span class="block text-2xl font-extrabold text-green-600">
+                            {{ $bookings->where('status', 'accepted')->count() }}
+                        </span>
+                        <span class="text-xs text-gray-500 font-medium">Active Lessons</span>
                     </div>
                 </div>
             </div>
@@ -103,5 +117,4 @@
         </div>
 
     </div>
-
 @endsection

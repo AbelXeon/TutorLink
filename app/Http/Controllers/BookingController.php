@@ -6,147 +6,147 @@ use App\Models\TutorProfile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use App\Models\User;
+use App\Models\Booking;
+use App\Models\Notification;
+use Carbon\Carbon;
 
 class BookingController extends Controller
 {
-     // Shows the booking form
-    public function ShowBookingForm($tutor_id)
+    // 1. Show the Booking Form
+    public function showBookingForm($username)
     {
-        // Fetch the tutor profile and join with user table to get the name
-        $tutor = TutorProfile::join('users', 'tutor_profiles.user_id', '=', 'users.id')
-            ->select('tutor_profiles.id', 'users.first_name', 'users.last_name')
-            ->where('tutor_profiles.id', $tutor_id)
+        // Find the tutor by their secure username
+        $tutor = User::where('username', $username)
+            ->whereHas('role', function($q) {
+                $q->where('role_type', 'Teacher');
+            })
             ->firstOrFail();
 
-        return view('Booking.Booking', compact('tutor'));
+        $tutorProfile = TutorProfile::where('user_id', $tutor->id)->firstOrFail();
+        $schedules = $tutor->schedules; // Get tutor availability slots
+
+        return view('Booking.Booking', compact('tutor', 'tutorProfile', 'schedules'));
     }
 
-    // Handles the booking submission
-    public function StoreBooking(Request $request)
+    // 2. Save the Booking Request
+    public function storeBooking(Request $request, $username)
     {
         $request->validate([
-            'tutor_id' => 'required|exists:tutor_profiles,id',
-            'message'  => 'required|string|max:1000',
-            'dates'    => 'required|array',
-            'dates.*'  => 'required|date|after_or_equal:today',
-            'times'    => 'required|array',
-            'times.*'  => 'required',
+            'session_date' => 'required|date|after_or_equal:today',
+            'start_time'   => 'required|date_format:H:i',
+            'end_time'     => 'required|date_format:H:i|after:start_time',
+            'note'         => 'nullable|string|max:500',
         ]);
 
+        $tutor = User::where('username', $username)->firstOrFail();
         $student = Auth::user();
 
-        // 1. Group dates and times into a single array
-        $slots = [];
-        foreach ($request->dates as $key => $date) {
-            $slots[] = [
-                'date' => $date,
-                'time' => $request->times[$key] ?? '00:00'
-            ];
+        // Security check: You cannot book yourself
+        if ($tutor->id === $student->id) {
+            return back()->withInput()->withErrors(['error' => 'You cannot book a tutoring session with yourself.']);
         }
 
-        // 2. Save the booking in the database
-        $bookingId = DB::table('bookings')->insertGetId([
-            'tutor_id'       => $request->tutor_id,
-            'student_id'     => $student->id,
-            'status'         => 'pending',
-            'message'        => $request->message,
-            'selected_slots' => json_encode($slots), // Convert array to JSON string
-            'created_at'     => now(),
-            'updated_at'     => now(),
+        // 1. DOUBLE-BOOKING CHECK (Overlapping time slots for the same date)
+        $overlap = Booking::where('tutor_id', $tutor->id)
+            ->where('session_date', $request->session_date)
+            ->where('status', 'accepted') // Only overlapping accepted bookings are conflicts
+            ->where(function($q) use ($request) {
+                $q->where(function($sub) use ($request) {
+                    $sub->where('start_time', '<', $request->end_time)
+                        ->where('end_time', '>', $request->start_time);
+                });
+            })->exists();
+
+        if ($overlap) {
+            return back()->withInput()->withErrors(['error' => 'This timeslot has already been booked and accepted by another student. Please select a different time or date.']);
+        }
+
+        // 2. Create the Booking with 'pending' status
+        $booking = Booking::create([
+            'tutor_id'     => $tutor->id,
+            'student_id'   => $student->id,
+            'session_date' => $request->session_date,
+            'start_time'   => $request->start_time,
+            'end_time'     => $request->end_time,
+            'note'         => $request->note,
+            'status'       => 'pending',
         ]);
 
-        // 3. Find the tutor's User ID to send them a notification
-        $tutorProfile = TutorProfile::findOrFail($request->tutor_id);
-
-        // 4. Create an automated notification for the teacher
-        DB::table('notifications')->insert([
-            'user_id'           => $tutorProfile->user_id, // Receives the notification
-            'notification_type' => 'booking',
-            'title'             => 'New Booking Request 📅',
-            'message'           => $student->first_name . ' has requested a lesson booking with you.',
-            'action_url'        => route('Teacher.Teacher_Dashboard'),
-            'is_read'           => false,
-            'created_at'        => now(),
+        // 3. Create a Notification record for the Tutor
+        Notification::create([
+            'user_id'           => $tutor->id,
+            'notification_type' => 'booking_request',
+            'title'             => 'New Booking Request',
+            'message'           => 'You have received a new booking request from ' . $student->first_name . ' for ' . Carbon::parse($request->session_date)->format('M d, Y') . '.',
+            'action_url'        => route('tutor.dashboard'), // Sends them straight to their dashboard to accept/decline
         ]);
 
-        return redirect()->route('Student.Student_Dashboard')
-            ->with('success', 'Booking request sent successfully!');
+        return redirect()->route('student.dashboard')->with('success', 'Booking requested successfully! You will be notified once the tutor accepts.');
     }
 
-    // 5. Handles Teacher accepting a booking
-    public function AcceptBooking($id)
+
+
+     public function acceptBooking($id)
     {
-        $booking = DB::table('bookings')->where('id', $id)->first();
-        
-        if (!$booking) {
-            return back()->with('error', 'Booking request not found.');
-        }
+        $tutor = Auth::user();
 
-        // Update booking status
-        DB::table('bookings')->where('id', $id)->update(['status' => 'accepted']);
+        // Securely fetch booking belonging ONLY to logged-in tutor
+        $booking = Booking::where('id', $id)
+            ->where('tutor_id', $tutor->id)
+            ->where('status', 'pending')
+            ->firstOrFail();
 
-        $tutorUser = Auth::user();
+        // Update booking state
+        $booking->update([
+            'status' => 'accepted',
+            'accepted_at' => now()
+        ]);
 
-        // Send confirmation notification to the student
-        DB::table('notifications')->insert([
+        // Auto-create chat Conversation channel between student and tutor if it doesn't exist
+        \App\Models\Conversation::firstOrCreate([
+            'student_id' => $booking->student_id,
+            'tutor_id'   => $tutor->id
+        ]);
+
+        // Notify the Student
+        Notification::create([
             'user_id'           => $booking->student_id,
             'notification_type' => 'booking_accepted',
-            'title'             => 'Booking Request Approved! 🎉',
-            'message'           => 'Tutor ' . $tutorUser->first_name . ' has approved your requested slots.',
-            'action_url'        => route('Student.Student_Dashboard'),
-            'is_read'           => false,
-            'created_at'        => now(),
+            'title'             => 'Booking Request Accepted!',
+            'message'           => 'Tutor ' . $tutor->first_name . ' accepted your booking request for ' . Carbon::parse($booking->session_date)->format('M d, Y') . '. You can now message each other.',
+            'action_url'        => route('student.dashboard'),
         ]);
 
-        // Check if a conversation already exists between this student and tutor to prevent duplicates
-        $existingConvo = DB::table('conversations')
-            ->where('student_id', $booking->student_id)
-            ->where('tutor_id', $tutorUser->id)
-            ->first();
-
-        if ($existingConvo) {
-            // Update timestamp of existing thread
-            DB::table('conversations')
-                ->where('id', $existingConvo->id)
-                ->update(['last_message_at' => now()]);
-        } else {
-            // Create a brand new single thread
-            DB::table('conversations')->insert([
-                'student_id'      => $booking->student_id,
-                'tutor_id'        => $tutorUser->id,
-                'last_message_at' => now(),
-            ]);
-        }
-
-        return back()->with('success', 'You have accepted this booking request successfully!');
+        return back()->with('success', 'Booking accepted successfully! A secure chat channel has been unlocked.');
     }
 
-    // 6. Handles Teacher declining a booking
-    public function DeclineBooking($id)
+    // 4. Decline/Reject Booking Request
+    public function rejectBooking($id)
     {
-        $booking = DB::table('bookings')->where('id', $id)->first();
-        
-        if (!$booking) {
-            return back()->with('error', 'Booking request not found.');
-        }
+        $tutor = Auth::user();
 
-        // Update booking status
-        DB::table('bookings')->where('id', $id)->update(['status' => 'rejected']);
+        $booking = Booking::where('id', $id)
+            ->where('tutor_id', $tutor->id)
+            ->where('status', 'pending')
+            ->firstOrFail();
 
-        $tutorUser = Auth::user();
-
-        // Send notification to the student
-        DB::table('notifications')->insert([
-            'user_id'           => $booking->student_id,
-            'notification_type' => 'booking_declined',
-            'title'             => 'Booking Request Declined ❌',
-            'message'           => 'Tutor ' . $tutorUser->first_name . ' has declined your booking request.',
-            'action_url'        => route('Student.Student_Dashboard'),
-            'is_read'           => false,
-            'created_at'        => now(),
+        $booking->update([
+            'status' => 'rejected',
+            'rejected_at' => now()
         ]);
 
-        return back()->with('success', 'Booking request declined.');
+        // Notify the Student
+        Notification::create([
+            'user_id'           => $booking->student_id,
+            'notification_type' => 'booking_rejected',
+            'title'             => 'Booking Request Declined',
+            'message'           => 'Tutor ' . $tutor->first_name . ' declined your booking request for ' . Carbon::parse($booking->session_date)->format('M d, Y') . '.',
+            'action_url'        => route('student.dashboard'),
+        ]);
+
+        return back()->with('success', 'Booking request declined successfully.');
     }
 
+    
 }

@@ -5,62 +5,46 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use App\Models\Notification;
 
 class NotificationController extends Controller
 {
   
 
-   public function Notification()
+  // 1. Show Notifications Page
+    public function index()
     {
         $user = Auth::user();
 
-        if (!$user) {
-            return redirect()->route('Auth.Login');
-        }
-
-        // 1. Fetch all notifications for the logged-in user (newest first)
-        $notifications = DB::table('notifications')
-            ->where('user_id', $user->id)
+        // Fetch notifications sorted by most recent
+        $notifications = Notification::where('user_id', $user->id)
             ->orderBy('created_at', 'desc')
             ->get();
 
-        // 2. Mark any unread notifications as read, since they are looking at them now
-        DB::table('notifications')
-            ->where('user_id', $user->id)
-            ->where('is_read', false)
-            ->update(['is_read' => true]);
-
-        return view('Notification.Notification', compact('notifications'));
+        // Correct and only return statement:
+        return view('Notification.Notification', compact('user', 'notifications'));
     }
 
-   // Returns sum of unread notifications AND unread chat messages for dashboard live alerts
-    public function getUnreadCount()
+    // 2. Mark specific notification as Read securely
+    public function markAsRead($id)
     {
-        if (!Auth::check()) {
-            return response()->json(['count' => 0]);
+        $user = Auth::user();
+
+        // Securely find the notification belonging ONLY to the logged-in user (prevents hackers from reading other's notifications)
+        $notification = Notification::where('id', $id)
+            ->where('user_id', $user->id)
+            ->firstOrFail();
+
+        $notification->update([
+            'read_at' => true
+        ]);
+
+        // If it has an action URL, redirect them to it
+        if ($notification->action_url) {
+            return redirect($notification->action_url);
         }
 
-        $userId = Auth::id();
-
-        // 1. Fetch unread notifications count
-        $notificationCount = DB::table('notifications')
-            ->where('user_id', $userId)
-            ->where('is_read', false)
-            ->count();
-
-        // 2. Fetch unread messages count (where user is part of conversation, but didn't send the message)
-        $messageCount = DB::table('messages')
-            ->join('conversations', 'messages.conversation_id', '=', 'conversations.id')
-            ->where(function($query) use ($userId) {
-                $query->where('conversations.student_id', $userId)
-                      ->orWhere('conversations.tutor_id', $userId);
-            })
-            ->where('messages.sender_id', '!=', $userId)
-            ->where('messages.is_read', false)
-            ->count();
-
-        // Sum both values for dashboard badge updates
-        return response()->json(['count' => $notificationCount + $messageCount]);
+        return back()->with('success', 'Notification marked as read.');
     }
 
 }

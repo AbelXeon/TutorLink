@@ -258,21 +258,14 @@ class AuthController extends Controller
     }
 
 
-
-
-
-
-
-
-
-
-
-
+    
     // 1. Show the Login Form
     public function showLoginForm()
     {
         return view('Auth.Login');
     }
+
+
 
   // Process Secure Login with 5-Attempt Rate Limiting
     public function login(Request $request)
@@ -368,7 +361,7 @@ class AuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect()->route('Landing')->with('success', 'Logged out successfully.');
+        return redirect()->route('login')->with('success', 'Logged out successfully.');
     }
   }
 

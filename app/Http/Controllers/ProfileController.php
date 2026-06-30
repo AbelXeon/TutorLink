@@ -98,9 +98,12 @@ class ProfileController extends Controller
             if ($user->profile_image) {
                 Storage::disk('public')->delete($user->profile_image);
             }
-            $path = $request->file('profile_image')->store('profiles', 'public');
+            // UPDATED: Now calls our native resizing and compression helper method
+            $path = $this->resizeAndSaveImage($request->file('profile_image'), 'profiles');
             $user->update(['profile_image' => $path]);
         }
+
+
 
         $profile->update([
             'bio'              => $request->bio,
@@ -157,8 +160,68 @@ class ProfileController extends Controller
             WHEN day_of_week = 'Sunday' THEN 7
         END"))->get();
 
+         // NEW: Fetch all pending lesson requests for this tutor from students
+        $pendingBookings = \App\Models\Booking::where('tutor_id', $user->id)
+            ->where('status', 'pending')
+            ->with('student')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
         return view('Teacher.Teacher_Dashboard', 
-        compact('user', 'tutorProfile', 'gradeLevels', 'categories','schedules'));
+        compact('user', 'tutorProfile', 'gradeLevels', 'categories','schedules','pendingBookings'));
+    }
+
+     private function resizeAndSaveImage($file, $destinationPath)
+    {
+        list($width, $height, $type) = getimagesize($file);
+        
+        $maxDimension = 300;
+        $ratio = $width / $height;
+        
+        if ($ratio > 1) {
+            $newWidth = $maxDimension;
+            $newHeight = $maxDimension / $ratio;
+        } else {
+            $newWidth = $maxDimension * $ratio;
+            $newHeight = $maxDimension;
+        }
+
+        switch ($type) {
+            case IMAGETYPE_JPEG:
+                $src = imagecreatefromjpeg($file);
+                break;
+            case IMAGETYPE_PNG:
+                $src = imagecreatefrompng($file);
+                break;
+            default:
+                return $file->store($destinationPath, 'public'); // Fallback in case GD fails
+        }
+
+        $dst = imagecreatetruecolor($newWidth, $newHeight);
+
+        // Maintain transparency for PNG files
+        if ($type == IMAGETYPE_PNG) {
+            imagealphablending($dst, false);
+            imagesavealpha($dst, true);
+        }
+
+        imagecopyresampled($dst, $src, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
+
+        // Generate a cryptographically secure random filename
+        $filename = md5(uniqid()) . '.jpg';
+        $fullPath = storage_path('app/public/' . $destinationPath . '/' . $filename);
+
+        if (!file_exists(dirname($fullPath))) {
+            mkdir(dirname($fullPath), 0755, true);
+        }
+
+        // Save as a highly compressed JPEG (80% quality)
+        imagejpeg($dst, $fullPath, 80);
+
+        imagedestroy($src);
+        imagedestroy($dst);
+
+        return $destinationPath . '/' . $filename;
     }
 
 

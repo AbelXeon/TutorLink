@@ -37,6 +37,14 @@ Route::middleware('guest')->group(function () {
     [AuthController::class, 'registerStudent'])
     ->name('register.student'); 
 
+    // Legal Routes
+Route::get('/terms-of-service', function () {
+    return view('legal.terms');
+})->name('terms');
+
+Route::get('/privacy-policy', function () {
+    return view('legal.privacy');
+})->name('privacy');
 
     // Email Verification
     Route::get('/verify-email', [AuthController::class, 'showVerifyForm'])
@@ -70,19 +78,46 @@ Route::middleware('auth')->group(function () {
      [StudentController::class, 'showStudentDashboard'])
      ->name('student.dashboard');
 
+Route::get('/tutors', 
+[SearchController::class, 'browseTutors'])
+->name('tutors.browse');
+
+
+Route::get('/tutors/{username}', 
+[SearchController::class, 'showTutorProfile'])
+->name('tutors.profile');
+
+     
+    // Tutor Booking Routes (Uses secure Username parameters)
+    Route::get('/tutors/{username}/book', 
+    [BookingController::class, 'showBookingForm'])->name('tutors.book');
+
+
+    Route::post('/tutors/{username}/book', 
+    [BookingController::class, 'storeBooking'])->name('tutors.book.store');
+
+      Route::post('/bookings/{id}/accept', 
+      [BookingController::class, 'acceptBooking'])
+      ->name('bookings.accept');
+
+    Route::post('/bookings/{id}/reject', 
+    [BookingController::class, 'rejectBooking'])
+    ->name('bookings.reject');
+
+        Route::get('/notifications', 
+        [NotificationController::class, 'index'])
+        ->name('notifications.index');
+
+
+    Route::post('/notifications/{id}/read', 
+    [NotificationController::class, 'markAsRead'])
+    ->name('notifications.read');
+
     // Logout
     Route::post('/logout', [AuthController::class, 'logout'])
     ->name('logout'); 
 });
 
 
-// Legal Routes
-Route::get('/terms-of-service', function () {
-    return view('legal.terms');
-})->name('terms');
-
-Route::get('/privacy-policy', function () {
-    return view('legal.privacy');
-})->name('privacy');
 
 

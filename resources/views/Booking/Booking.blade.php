@@ -1,119 +1,146 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Book a Lesson - TutorLink</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body class="bg-light">
+@extends('Layouts.Layout')
 
-<div class="container py-5">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
+@section('title', 'Book Lesson with ' . $tutor->first_name)
 
-            <div class="card shadow border-0">
-                <div class="card-header bg-primary text-white py-3">
-                    <h3 class="mb-0 fw-bold">📅 Request Lesson with {{ $tutor->first_name }} {{ $tutor->last_name }}</h3>
-                </div>
-
-                <div class="card-body p-4">
-
-                    <form action="{{ route('Booking.store') }}" method="POST">
-                        @csrf
-
-                        <!-- Hidden Tutor Profile ID -->
-                        <input type="hidden" name="tutor_id" value="{{ $tutor->id }}">
-
-                        @if ($errors->any())
-                            <div class="alert alert-danger mb-4">
-                                <ul class="mb-0">
-                                    @foreach ($errors->all() as $error)
-                                        <li>{{ $error }}</li>
-                                    @endforeach
-                                </ul>
-                            </div>
-                        @endif
-
-                        <!-- Introductory Message -->
-                        <div class="mb-4">
-                            <label class="form-label fw-bold">Message for the Tutor</label>
-                            <textarea class="form-control" name="message" rows="4" 
-                                      placeholder="Introduce yourself, discuss what you want to learn, or add any requests..." required>{{ old('message') }}</textarea>
-                        </div>
-
-                        <!-- Dynamic Time Slots Selection -->
-                        <div class="mb-4">
-                            <label class="form-label fw-bold d-block">Proposed Date & Time Slots</label>
-                            <small class="text-muted d-block mb-3">You can propose more than one date and time option for your lesson.</small>
-
-                            <!-- Slots Container -->
-                            <div id="slots-container">
-                                <div class="row g-2 mb-2 slot-row">
-                                    <div class="col-md-5">
-                                        <label class="form-label small text-muted mb-1">Date</label>
-                                        <input type="date" name="dates[]" class="form-control" required>
-                                    </div>
-                                    <div class="col-md-5">
-                                        <label class="form-label small text-muted mb-1">Time</label>
-                                        <input type="time" name="times[]" class="form-control" required>
-                                    </div>
-                                    <div class="col-md-2 d-flex align-items-end">
-                                        <!-- Hide remove button on the very first row -->
-                                        <button type="button" class="btn btn-danger w-100 remove-slot-btn" style="display: none;">Delete</button>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Plus Button -->
-                            <button type="button" id="add-slot-btn" class="btn btn-outline-secondary btn-sm mt-2">
-                                ➕ Add Another Slot
-                            </button>
-                        </div>
-
-                        <hr class="my-4">
-
-                        <div class="d-flex justify-content-between">
-                            <a href="{{ route('Search.Tutor_View') }}" class="btn btn-light">Cancel</a>
-                            <button type="submit" class="btn btn-success px-4">Confirm Booking Request</button>
-                        </div>
-
-                    </form>
-
-                </div>
-            </div>
-
-        </div>
+@section('content')
+<div class="max-w-xl mx-auto bg-white p-8 rounded-lg shadow-sm border border-gray-200">
+    <div class="border-b border-gray-200 pb-6 mb-6">
+        <h2 class="text-2xl font-extrabold text-gray-900">Book a Lesson</h2>
+        <p class="text-sm text-gray-500 mt-1">
+            Booking a session with <strong class="text-indigo-600">{{ $tutor->first_name }} {{ $tutor->last_name }}</strong>
+        </p>
     </div>
+
+    @if ($errors->any())
+        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-6">
+            <strong class="font-bold">Whoops!</strong>
+            <ul class="mt-2 list-disc list-inside text-sm">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
+    <form action="{{ route('tutors.book.store', $tutor->username) }}" method="POST" class="space-y-6">
+        @csrf
+
+        <!-- 1. Select Date -->
+        <div>
+            <label for="session_date" class="block text-sm font-medium text-gray-700">Select Date</label>
+            <input id="session_date" name="session_date" type="date" required min="{{ date('Y-m-d') }}" value="{{ old('session_date') }}" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+        </div>
+
+        <!-- 2. Dynamic Available Slots (Hidden until date is selected) -->
+        <div id="slots_section" class="hidden">
+            <label class="block text-sm font-medium text-gray-700 mb-2">Available Time Slots for this day</label>
+            <div id="slots_container" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <!-- Dynamically populated via JS -->
+            </div>
+            
+            <!-- Hidden inputs to submit actual selected times -->
+            <input type="hidden" id="start_time" name="start_time" required>
+            <input type="hidden" id="end_time" name="end_time" required>
+        </div>
+
+        <!-- 3. Booking Notes -->
+        <div>
+            <label for="note" class="block text-sm font-medium text-gray-700">Message / Note to Tutor (Optional)</label>
+            <textarea id="note" name="note" rows="3" placeholder="Tell the tutor what topics you'd like to focus on during this lesson..." class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">{{ old('note') }}</textarea>
+        </div>
+
+        <div class="pt-4 border-t border-gray-100 flex justify-end gap-3">
+            <a href="{{ route('tutors.profile', $tutor->username) }}" class="px-4 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition">
+                Cancel
+            </a>
+            <button type="submit" id="submit_btn" disabled class="px-5 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition">
+                Request Session Booking
+            </button>
+        </div>
+    </form>
 </div>
 
-<!-- JavaScript to handle dynamic adding/removing of date-time fields -->
+<!-- JAVASCRIPT FOR DYNAMIC AVAILABILITY MATCHING -->
 <script>
-    const addSlotBtn = document.getElementById('add-slot-btn');
-    const slotsContainer = document.getElementById('slots-container');
+    // Tutor Availability Slots populated from database
+    const tutorSchedules = [
+        @foreach($schedules as $sched)
+            {
+                "day": "{{ $sched->day_of_week }}",
+                "start": "{{ \Carbon\Carbon::parse($sched->start_time)->format('H:i') }}",
+                "end": "{{ \Carbon\Carbon::parse($sched->end_time)->format('H:i') }}",
+                "display": "{{ \Carbon\Carbon::parse($sched->start_time)->format('g:i A') }} - {{ \Carbon\Carbon::parse($sched->end_time)->format('g:i A') }}"
+            },
+        @endforeach
+    ];
 
-    addSlotBtn.addEventListener('click', function() {
-        // Clone the first slot row
-        const firstRow = document.querySelector('.slot-row');
-        const newRow = firstRow.cloneNode(true);
+    const dateInput = document.getElementById('session_date');
+    const slotsSection = document.getElementById('slots_section');
+    const slotsContainer = document.getElementById('slots_container');
+    const startTimeInput = document.getElementById('start_time');
+    const endTimeInput = document.getElementById('end_time');
+    const submitBtn = document.getElementById('submit_btn');
 
-        // Reset the inputs in the cloned row
-        newRow.querySelectorAll('input').forEach(input => {
-            input.value = '';
-        });
+    function checkAvailability() {
+        const dateVal = dateInput.value;
+        slotsContainer.innerHTML = '';
+        submitBtn.disabled = true;
+        startTimeInput.value = '';
+        endTimeInput.value = '';
 
-        // Show and configure the delete button on the cloned row
-        const removeBtn = newRow.querySelector('.remove-slot-btn');
-        removeBtn.style.display = 'block';
+        if (dateVal) {
+            // Analyze chosen day of the week
+            const selectedDate = new Date(dateVal);
+            const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const selectedDay = days[selectedDate.getDay()];
 
-        removeBtn.addEventListener('click', function() {
-            newRow.remove();
-        });
+            // Filter tutor slots matching that day
+            const availableSlots = tutorSchedules.filter(sched => sched.day === selectedDay);
 
-        // Append the new row to container
-        slotsContainer.appendChild(newRow);
-    });
+            if (availableSlots.length > 0) {
+                slotsSection.classList.remove('hidden');
+
+                availableSlots.forEach((slot, index) => {
+                    const button = document.createElement('button');
+                    button.type = 'button';
+                    button.className = "time-slot-btn py-2.5 px-4 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:border-indigo-500 hover:bg-indigo-50 transition text-center";
+                    button.textContent = slot.display;
+                    button.setAttribute('data-start', slot.start);
+                    button.setAttribute('data-end', slot.end);
+
+                    button.addEventListener('click', function() {
+                        // Reset all buttons style
+                        document.querySelectorAll('.time-slot-btn').forEach(btn => {
+                            btn.classList.remove('border-indigo-600', 'bg-indigo-50', 'text-indigo-700');
+                        });
+
+                        // Select this button
+                        this.classList.add('border-indigo-600', 'bg-indigo-50', 'text-indigo-700');
+
+                        // Save times into hidden fields
+                        startTimeInput.value = slot.start;
+                        endTimeInput.value = slot.end;
+                        
+                        // Enable form submission
+                        submitBtn.disabled = false;
+                    });
+
+                    slotsContainer.appendChild(button);
+                });
+            } else {
+                slotsSection.classList.remove('hidden');
+                slotsContainer.innerHTML = `<p class="text-sm text-red-500 italic col-span-2">This tutor has no available sessions configured for ${selectedDay}s.</p>`;
+            }
+        } else {
+            slotsSection.classList.add('hidden');
+        }
+    }
+
+    dateInput.addEventListener('change', checkAvailability);
+
+    // Initial check if returning with validation errors
+    if (dateInput.value) {
+        checkAvailability();
+    }
 </script>
-
-</body>
-</html>
+@endsection
