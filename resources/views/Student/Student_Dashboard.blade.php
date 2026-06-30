@@ -1,200 +1,107 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Dashboard - TutorLink</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body class="bg-light">
+@extends('Layouts.Layout')
 
-    <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
-        <div class="container">
-            <a class="navbar-brand fw-bold" href="#">🎓 TutorLink Student Portal</a>
-            <div class="d-flex align-items-center">
+@section('title', 'Student Dashboard - TutorLink')
 
-                 <!-- 💬 Messages Link -->
-                <a href="{{ route('Messages.Message') }}" class="btn btn-outline-light btn-sm me-3">
-                    💬 Messages
-                </a>
+@section('content')
 
-<a href="{{ route('Notification.Notification') }}" id="notification-bell-btn" class="btn btn-outline-light btn-sm position-relative me-3">
-    🔔 Notifications
-    <span id="notification-badge-count" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger {{ $unreadNotificationsCount > 0 ? '' : 'd-none' }}">
-        {{ $unreadNotificationsCount }}
-    </span>
-</a>
-
-                <!-- Logout Form -->
-                <form action="{{ route('Auth.Logout') }}" method="POST" class="d-inline">
-                    @csrf
-                    <button type="submit" class="btn btn-outline-light btn-sm">Logout</button>
-                </form>
-            </div>
-        </div>
-    </nav>
-
-    <div class="container py-5">
+    <!-- Welcome Card -->
+    <div class="bg-indigo-600 text-white rounded-lg shadow-md p-8 mb-8">
+        <h2 class="text-3xl font-extrabold">Hello, {{ $user->first_name }}! 👋</h2>
+        <p class="mt-2 text-indigo-100 text-sm max-w-xl">
+            Welcome to your Student Dashboard. Here you can track your active tutoring bookings, check messages, and connect with experienced tutors.
+        </p>
         
-        @if (session('success'))
-            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                {{ session('success') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        @endif
-
-        <div class="row justify-content-center">
-            <div class="col-md-8">
-                
-                <!-- Welcome card -->
-                <div class="card shadow border-0 p-4 mb-4 bg-white">
-                    <div class="d-flex align-items-center gap-3">
-                        @if($user->profile_image)
-                            <img src="{{ asset('storage/' . $user->profile_image) }}" class="rounded-circle" style="width: 70px; height: 70px; object-fit: cover;" alt="Profile Image">
-                        @else
-                            <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold" style="width: 70px; height: 70px; font-size: 1.5rem;">
-                                {{ strtoupper(substr($user->first_name, 0, 1)) }}
-                            </div>
-                        @endif
-                        <div>
-                            <h3 class="fw-bold mb-0">Welcome, {{ $user->first_name }}!</h3>
-                            <p class="text-muted mb-0">Manage your bookings or discover new tutors.</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Booking Requests Status List -->
-                <div class="card shadow border-0 p-4 mb-4 bg-white">
-                    <h4 class="fw-bold text-dark mb-3">🗓️ Your Lesson Requests</h4>
-                    
-                    @forelse($bookings as $booking)
-                        <div class="border rounded p-3 mb-3 bg-white shadow-sm">
-                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                <h5 class="fw-bold mb-0 text-dark">Tutor: {{ $booking->tutor_first_name }} {{ $booking->tutor_last_name }}</h5>
-                                
-                                <!-- Status badge indicator -->
-                                @if($booking->status == 'pending')
-                                    <span class="badge bg-warning text-dark p-2 fs-6">Pending Approval</span>
-                                @elseif($booking->status == 'accepted')
-                                    <span class="badge bg-success p-2 fs-6">Approved 🎉</span>
-                                @else
-                                    <span class="badge bg-danger p-2 fs-6">Declined ❌</span>
-                                @endif
-                            </div>
-
-                            <p class="text-secondary small mb-2">Message: <em>"{{ $booking->message }}"</em></p>
-
-                            <h6 class="fw-semibold text-dark mb-1">Proposed Slots:</h6>
-                            <div class="mt-1">
-                                @if(isset($booking->slots) && is_array($booking->slots))
-                                    @foreach($booking->slots as $slot)
-                                        <span class="badge bg-secondary me-2 mb-1 p-2">🗓️ {{ $slot['date'] }} at 🕒 {{ $slot['time'] }}</span>
-                                    @endforeach
-                                @endif
-
-                                <!-- If approved, show chat link -->
-                                @if($booking->status == 'accepted')
-                                    <a href="{{ route('Messages.Message') }}" class="btn btn-sm btn-outline-primary ms-auto">💬 Chat with Tutor</a>
-                                @endif
-
-
-                            </div>
-                        </div>
-                    @empty
-                        <p class="text-muted mb-0">You have not booked any lessons yet.</p>
-                    @endforelse
-                </div>
-
-                <!-- Call to action card -->
-                <div class="card shadow border-0 p-5 text-center bg-white">
-                    <div class="mb-3 fs-1">🔍</div>
-                    <h4 class="fw-bold mb-3">Find Your Perfect Tutor</h4>
-                    <p class="text-muted px-md-5 mb-4">
-                        Search and connect with verified, professional tutors teaching programming, school subjects, languages, and specific skills.
-                    </p>
-                    <div class="d-grid gap-2 col-md-6 mx-auto">
-                        <a href="{{ route('Search.Tutor_View') }}" class="btn btn-primary btn-lg shadow-sm">
-                            Browse All Tutors
-                        </a>
-                    </div>
-                </div>
-
-            </div>
+        <!-- Primary Action: Browse Teachers -->
+        <div class="mt-6">
+            <a href="#" class="inline-flex items-center px-6 py-3 border border-transparent text-sm font-semibold rounded-md text-indigo-700 bg-white hover:bg-indigo-50 transition shadow-sm">
+                🔍 Browse & Find Tutors
+            </a>
         </div>
     </div>
 
+    <!-- Main Dashboard Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <!-- Left: Booked Tutor List Card -->
+        <div class="lg:col-span-2 bg-white rounded-lg shadow-md border border-gray-200 p-6">
+            <h3 class="text-lg font-bold text-gray-900 mb-4">My Booked Tutors</h3>
 
-    <!-- Floating Live Notification Alert Box -->
-    <div id="notification-toast" class="position-fixed bottom-0 start-0 m-3 p-3 bg-dark text-white rounded shadow-lg d-none" style="z-index: 1055; width: 300px;">
-        <div class="d-flex align-items-center gap-2">
-            <span class="fs-4">🔔</span>
-            <div>
-                <strong class="d-block">New Alert!</strong>
-                <span class="small text-white-50">You received a new update. Check your notifications.</span>
-            </div>
-            <button type="button" class="btn-close btn-close-white ms-auto align-self-start" onclick="document.getElementById('notification-toast').classList.add('d-none')"></button>
+            @if($bookings->count() > 0)
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tutor</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date & Time</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200 bg-white text-sm">
+                            @foreach($bookings as $booking)
+                                <tr>
+                                    <td class="px-6 py-4 whitespace-nowrap font-semibold text-gray-900">
+                                        {{ $booking->tutor->user->first_name }} {{ $booking->tutor->user->last_name }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-gray-500">
+                                        {{ $booking->session_date }} at {{ $booking->start_time }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">
+                                            {{ $booking->status }}
+                                        </span>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @else
+                <div class="text-center py-10 bg-gray-50 rounded-md border border-dashed border-gray-200">
+                    <p class="text-gray-500 text-sm">You haven't booked any tutoring sessions yet.</p>
+                    <a href="#" class="mt-3 inline-flex items-center text-xs font-bold text-indigo-600 hover:text-indigo-500">
+                        Find a tutor now &rarr;
+                    </a>
+                </div>
+            @endif
         </div>
+
+        <!-- Right: Summary Panel -->
+        <div class="space-y-6">
+            <!-- Stats Widget -->
+            <div class="bg-white rounded-lg shadow-md border border-gray-200 p-6">
+                <h4 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">Activity Summary</h4>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-indigo-50 p-4 rounded-md">
+                        <span class="block text-2xl font-extrabold text-indigo-600">{{ $bookings->count() }}</span>
+                        <span class="text-xs text-gray-500 font-medium">Total Lessons</span>
+                    </div>
+                    <div class="bg-green-50 p-4 rounded-md">
+                        <span class="block text-2xl font-extrabold text-green-600">0</span>
+                        <span class="text-xs text-gray-500 font-medium">Completed</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Profile Details Box -->
+            <div class="bg-white rounded-lg shadow-md border border-gray-200 p-6">
+                <h4 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">My Information</h4>
+                <div class="space-y-3 text-sm text-gray-700">
+                    <div>
+                        <span class="text-gray-500 block text-xs">Email:</span>
+                        <span class="font-semibold">{{ $user->email }}</span>
+                    </div>
+                    <div>
+                        <span class="text-gray-500 block text-xs">Phone:</span>
+                        <span class="font-semibold">{{ $user->phone_number }}</span>
+                    </div>
+                    <div>
+                        <span class="text-gray-500 block text-xs">Primary Address:</span>
+                        <span class="font-semibold">{{ $user->address }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
 
-    <!-- Live check script -->
-    <script>
-        let currentCount = {{ $unreadNotificationsCount }};
-
-        function playNotificationChime() {
-            try {
-                const ctx = new (window.AudioContext || window.webkitAudioContext)();
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
-                osc.connect(gain);
-                gain.connect(ctx.destination);
-                
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(587.33, ctx.currentTime);
-                osc.frequency.setValueAtTime(880.00, ctx.currentTime + 0.12);
-                
-                gain.gain.setValueAtTime(0.15, ctx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
-                
-                osc.start(ctx.currentTime);
-                osc.stop(ctx.currentTime + 0.5);
-            } catch (e) {
-                console.log("Audio play blocked by browser sandbox permissions.");
-            }
-        }
-
-        function pollNotifications() {
-            fetch("{{ route('api.notifications.unread') }}")
-                .then(response => response.json())
-                .then(data => {
-                    const badge = document.getElementById('notification-badge-count');
-                    
-                    if (data.count > currentCount) {
-                        currentCount = data.count;
-                        
-                        if (badge) {
-                            badge.textContent = data.count;
-                            badge.classList.remove('d-none');
-                        }
-
-                        playNotificationChime();
-
-                        const toast = document.getElementById('notification-toast');
-                        toast.classList.remove('d-none');
-                        setTimeout(() => {
-                            toast.classList.add('d-none');
-                        }, 5000);
-                    } else if (data.count === 0 && badge) {
-                        badge.classList.add('d-none');
-                        currentCount = 0;
-                    }
-                })
-                .catch(err => console.error("Error syncing notifications:", err));
-        }
-
-        setInterval(pollNotifications, 10000);
-    </script>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+@endsection

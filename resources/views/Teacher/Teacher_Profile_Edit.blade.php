@@ -1,12 +1,10 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Edit Profile - TutorLink</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gray-100 min-h-screen py-12 px-4 sm:px-6 lg:px-8">
+@extends('Layouts.Layout')
+
+@section('title', 'Student Dashboard - TutorLink')
+
+@section('content')
+
+
     <div class="max-w-2xl mx-auto space-y-8 bg-white p-8 rounded-lg shadow-md border border-gray-200">
         
         <div class="flex justify-between items-center border-b border-gray-100 pb-6">
@@ -283,5 +281,7 @@
             }
         }
     </script>
-</body>
-</html>
+
+
+
+@endsection

@@ -274,7 +274,7 @@ class AuthController extends Controller
         return view('Auth.Login');
     }
 
-    // Process Secure Login with 5-Attempt Rate Limiting
+  // Process Secure Login with 5-Attempt Rate Limiting
     public function login(Request $request)
     {
         $request->validate([
@@ -319,26 +319,32 @@ class AuthController extends Controller
             RateLimiter::clear($throttleKey);
 
             $request->session()->regenerate();
-  // Check if the logged-in user is a Teacher
+
+            // Check User Role securely
             $role = Role::find($user->role_id);
-            if ($role && strtolower($role->role_type) === 'teacher') {
-                
-                // Fetch their tutor profile
-                $profile = TutorProfile::where('user_id', $user->id)->first();
-                
-                // If they don't have a profile yet, or if their Bio is still blank, send them to the setup page
-                if (!$profile || empty($profile->bio)) {
-                    return redirect()->route('tutor.profile.edit')->with('success', 'Please complete your tutor profile details.');
+            if ($role) {
+                $roleType = strtolower($role->role_type); // <-- Declared securely here
+
+                // 1. If Teacher
+                if ($roleType === 'teacher') {
+                    $profile = TutorProfile::where('user_id', $user->id)->first();
+                    
+                    if (!$profile || empty($profile->bio)) {
+                        return redirect()->route('tutor.profile.edit')->with('success', 'Please complete your tutor profile details.');
+                    }
+
+                    return redirect()->intended(route('tutor.dashboard'))->with('success', 'Welcome back!');
                 }
 
-                // If profile is already complete, send them to their dashboard
-                return redirect()->intended(route('tutor.dashboard'))->with('success', 'Welcome back!');
+                // 2. If Student (Redirects directly to dashboard, no profile making needed)
+                if ($roleType === 'student') {
+                    return redirect()->intended(route('student.dashboard'))->with('success', 'Welcome back!');
+                }
             }
 
-            // If user is not a teacher, or after teacher handling, send to generic landing
+            // Fallback redirect if no specific role matched
             return redirect()->intended(route('Landing'))->with('success', 'Welcome back!');
         }
-
 
         // 2. Failure! Record the attempt. 
         // Lockout duration set to 86400 seconds (24 Hours)

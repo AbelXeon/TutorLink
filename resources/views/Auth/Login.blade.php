@@ -69,13 +69,19 @@
             </div>
         </form>
         
-        <div class="text-center mt-4">
-            <p class="text-sm text-gray-600">
-                Don't have an account? 
-                <a href="{{ route('Auth.Teacher_Register') }}" class="font-medium text-indigo-600 hover:text-indigo-500">
-                    Register here
+        <!-- UPDATED SECTION: Structured Registration Selector Links -->
+        <div class="text-center mt-6 border-t border-gray-100 pt-6">
+            <p class="text-sm text-gray-600 mb-3">Don't have an account? Register as:</p>
+            <div class="flex justify-center gap-4">
+                <!-- Register as Student Link -->
+                <a href="{{ route('Auth.Student_Register') }}" class="text-sm font-semibold text-indigo-600 hover:text-indigo-500 border border-indigo-200 rounded-md px-4 py-2 hover:bg-indigo-50 transition shadow-sm">
+                    🎓 Student
                 </a>
-            </p>
+                <!-- Register as Teacher Link -->
+                <a href="{{ route('Auth.Teacher_Register') }}" class="text-sm font-semibold text-green-600 hover:text-green-500 border border-green-200 rounded-md px-4 py-2 hover:bg-green-50 transition shadow-sm">
+                    👨‍🏫 Teacher
+                </a>
+            </div>
         </div>
     </div>
 </body>

@@ -27,7 +27,7 @@ Route::middleware('guest')->group(function () {
     Route::post('/register/teacher', 
     [AuthController::class, 'registerTeacher'])->name('register.teacher');
 
-    
+
       // Student Registration
     Route::get('/Auth/student_Register', 
     [AuthController::class, 'showStudentRegisterForm'])
@@ -66,9 +66,23 @@ Route::middleware('auth')->group(function () {
     [ProfileController::class, 'showTeacherDashboard'])
     ->name('tutor.dashboard');
 
+     Route::get('/student/dashboard', 
+     [StudentController::class, 'showStudentDashboard'])
+     ->name('student.dashboard');
+
     // Logout
     Route::post('/logout', [AuthController::class, 'logout'])
     ->name('logout'); 
 });
+
+
+// Legal Routes
+Route::get('/terms-of-service', function () {
+    return view('legal.terms');
+})->name('terms');
+
+Route::get('/privacy-policy', function () {
+    return view('legal.privacy');
+})->name('privacy');
 
 
