@@ -33,8 +33,8 @@ class BookingController extends Controller
             $date = Carbon::today()->addDays($index = $i);
             $availabilities[] = [
                 'date_string' => $date->format('Y-m-d'),
-                'day_name'    => $date->format('l'), // e.g. "Monday"
-                'formatted'   => $date->format('D, M d'), // e.g. "Mon, Jun 29"
+                'day_name'    => $date->format('l'), 
+                'formatted'   => $date->format('D, M d'), 
                 'is_today'    => $date->isToday(),
             ];
         }
@@ -103,39 +103,42 @@ class BookingController extends Controller
 
 
 
-     public function acceptBooking($id)
+     // 3. Accept Booking Request (Tutors accept booking requests)
+    public function acceptBooking($id)
     {
         $tutor = Auth::user();
 
-        // Securely fetch booking belonging ONLY to logged-in tutor
+        // Fetch the pending booking securely
         $booking = Booking::where('id', $id)
             ->where('tutor_id', $tutor->id)
             ->where('status', 'pending')
             ->firstOrFail();
 
-        // Update booking state
+        // Update the booking status to accepted
         $booking->update([
             'status' => 'accepted',
             'accepted_at' => now()
         ]);
 
-        // Auto-create chat Conversation channel between student and tutor if it doesn't exist
-        \App\Models\Conversation::firstOrCreate([
+        // Auto-create or retrieve existing chat Conversation between them
+        $conversation = \App\Models\Conversation::firstOrCreate([
             'student_id' => $booking->student_id,
             'tutor_id'   => $tutor->id
         ]);
 
-        // Notify the Student
+        // Notify the Student and point the REDIRECT URL directly to the new Conversation
         Notification::create([
             'user_id'           => $booking->student_id,
             'notification_type' => 'booking_accepted',
             'title'             => 'Booking Request Accepted!',
-            'message'           => 'Tutor ' . $tutor->first_name . ' accepted your booking request for ' . Carbon::parse($booking->session_date)->format('M d, Y') . '. You can now message each other.',
-            'action_url'        => route('student.dashboard'),
+            'message'           => 'Tutor ' . $tutor->first_name . ' accepted your booking request for ' . Carbon::parse($booking->session_date)->format('M d, Y') . '. Click here to start chatting.',
+            'action_url'        => route('messages.show', $tutor->username), // <-- SECURED TO USERNAME
         ]);
 
         return back()->with('success', 'Booking accepted successfully! A secure chat channel has been unlocked.');
     }
+
+
 
     // 4. Decline/Reject Booking Request
     public function rejectBooking($id)

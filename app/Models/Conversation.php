@@ -22,4 +22,19 @@ class Conversation extends Model
     protected $casts = [
         'last_message_at' => 'datetime'
     ];
+
+    public function student()
+    {
+        return $this->belongsTo(User::class, 'student_id');
+    }
+
+    public function tutor()
+    {
+        return $this->belongsTo(User::class, 'tutor_id');
+    }
+
+    public function messages()
+    {
+        return $this->hasMany(Message::class, 'conversation_id');
+    }
 }

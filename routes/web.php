@@ -116,6 +116,19 @@ Route::get('/tutors/{username}',
     [NotificationController::class, 'markAsRead'])
     ->name('notifications.read');
 
+    
+    Route::get('/messages', 
+    [MessageController::class, 'index'])->name('messages.index');
+    Route::get('/messages/{username}', 
+    [MessageController::class, 'show'])->name('messages.show');
+    Route::post('/conversations/{id}/send', 
+    [MessageController::class, 'sendMessage'])->name('messages.store');
+    Route::get('/api/conversations/{id}/updates',
+    [MessageController::class, 'getNewMessages'])->name('messages.updates');
+
+
+
+
     // Logout
     Route::post('/logout', [AuthController::class, 'logout'])
     ->name('logout'); 

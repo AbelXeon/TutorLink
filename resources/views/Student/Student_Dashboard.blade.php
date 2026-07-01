@@ -39,10 +39,27 @@
                         <tbody class="divide-y divide-gray-200 bg-white text-sm">
                             @foreach($bookings as $booking)
                                 <tr>
-                                    <!-- FIXED: Accessing $booking->tutor property directly -->
-                                    <td class="px-6 py-4 whitespace-nowrap font-semibold text-gray-900">
-                                        {{ $booking->tutor->first_name }} {{ $booking->tutor->last_name }}
+                                    <td class="px-6 py-4 whitespace-nowrap font-semibold text-gray-900 flex items-center">
+                                        <span>{{ $booking->tutor->first_name }} {{ $booking->tutor->last_name }}</span>
+                                        
+                                        <!-- If booking is accepted, show direct Chat Button -->
+                                        @if($booking->status == 'accepted')
+                                            @php
+                                                // Securely retrieve conversation ID dynamically
+                                                $conv = \App\Models\Conversation::where('student_id', Auth::id())
+                                                    ->where('tutor_id', $booking->tutor_id)
+                                                    ->first();
+                                            @endphp
+                                           <!-- If booking is accepted, show direct Chat Button -->
+                                        @if($booking->status == 'accepted')
+                                            <a href="{{ route('messages.show', $booking->tutor->username) }}" class="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-2 py-1 rounded border border-indigo-100 transition ml-3 flex items-center gap-1 shadow-sm">
+                                                💬 Chat
+                                            </a>
+                                        @endif
+                                        @endif
                                     </td>
+
+
                                     <td class="px-6 py-4 whitespace-nowrap text-gray-500">
                                         {{ \Carbon\Carbon::parse($booking->session_date)->format('M d, Y') }} at 
                                         {{ \Carbon\Carbon::parse($booking->start_time)->format('g:i A') }}

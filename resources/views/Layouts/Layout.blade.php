@@ -22,10 +22,10 @@
                     </span>
                 </div>
 
-                <!-- Icons (Notification, Messages, Settings) -->
+                <!-- Header Icons -->
                 <div class="flex items-center space-x-6">
-                    <!-- Messages Icon -->
-                    <a href="#" class="text-gray-500 hover:text-indigo-600 transition" title="Messages">
+                    <!-- Messages Icon (Updated with dynamic route link) -->
+                    <a href="{{ route('messages.index') }}" class="text-gray-500 hover:text-indigo-600 transition" title="Messages">
                         <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                         </svg>
@@ -105,12 +105,7 @@
                     if (newCount > currentUnreadCount) {
                         currentUnreadCount = newCount;
 
-                        
-
-
                    let alertSound = new Audio('/sounds/notification.mp3');
-
-
 
                         alertSound.volume = 0.8; // Set volume to 80%
                         alertSound.play().catch(error => {

@@ -4,116 +4,208 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Str;
+use App\Models\Conversation;
+use App\Models\Message;
+use App\Models\Notification;
+use App\Models\User;
 
 class MessageController extends Controller
 {
-    
-    public function Message($conversation_id = null)
+    public function index()
     {
         $user = Auth::user();
 
-        if (!$user) {
-            return redirect()->route('Auth.Login');
-        }
-
-        // 1. Fetch all conversations the logged-in user is a part of (either student or tutor)
-        $conversations = DB::table('conversations')
-            ->where('student_id', $user->id)
+        $conversations = Conversation::where('student_id', $user->id)
             ->orWhere('tutor_id', $user->id)
+            ->with(['student', 'tutor', 'messages' => function($q) {
+                $q->orderBy('created_at', 'desc')->limit(1);
+            }])
             ->orderBy('last_message_at', 'desc')
             ->get();
 
-        // 2. Fetch user names and profile images of the OTHER person in each conversation
-        foreach ($conversations as $convo) {
-            $otherUserId = ($convo->student_id == $user->id) ? $convo->tutor_id : $convo->student_id;
-            $convo->other_user = DB::table('users')->where('id', $otherUserId)->first();
-        }
+        return view('Messages.Message', compact('conversations'));
+    }
 
-        $activeConvo = null;
-        $messages = [];
+    public function show($username)
+    {
+        $user = Auth::user();
+        $chatPartner = User::where('username', $username)->firstOrFail();
 
-        // 3. If a specific conversation thread is selected, load its messages
-        if ($conversation_id) {
-            $activeConvo = DB::table('conversations')->where('id', $conversation_id)->first();
+        $activeConversation = Conversation::where(function($q) use ($user, $chatPartner) {
+                $q->where('student_id', $user->id)->where('tutor_id', $chatPartner->id);
+            })
+            ->orWhere(function($q) use ($user, $chatPartner) {
+                $q->where('student_id', $chatPartner->id)->where('tutor_id', $user->id);
+            })
+            ->with(['student', 'tutor', 'messages.sender'])
+            ->firstOrFail();
 
-            if ($activeConvo) {
-                // Security check: Make sure the logged-in user belongs to this conversation
-                if ($activeConvo->student_id == $user->id || $activeConvo->tutor_id == $user->id) {
-                    
-                    // Load conversation messages
-                    $messages = DB::table('messages')
-                        ->where('conversation_id', $conversation_id)
-                        ->orderBy('created_at', 'asc')
-                        ->get();
+        Message::where('conversation_id', $activeConversation->id)
+            ->where('sender_id', '!=', $user->id)
+            ->whereNull('read_at')
+            ->update(['read_at' => now()]);
 
-                    // Mark unread messages received from the other user as read
-                    DB::table('messages')
-                        ->where('conversation_id', $conversation_id)
-                        ->where('sender_id', '!=', $user->id)
-                        ->where('is_read', false)
-                        ->update(['is_read' => true, 'read_at' => now()]);
+        $conversations = Conversation::where('student_id', $user->id)
+            ->orWhere('tutor_id', $user->id)
+            ->with(['student', 'tutor', 'messages' => function($q) {
+                $q->orderBy('created_at', 'desc')->limit(1);
+            }])
+            ->orderBy('last_message_at', 'desc')
+            ->get();
 
-                    // Attach the other user's info to the active convo object for the header
-                    $otherUserId = ($activeConvo->student_id == $user->id) ? $activeConvo->tutor_id : $activeConvo->student_id;
-                    $activeConvo->other_user = DB::table('users')->where('id', $otherUserId)->first();
+        return view('Messages.Message', compact('conversations', 'activeConversation'));
+    }
 
-                } else {
-                    abort(403, 'Unauthorized access to this conversation.');
-                }
+    public function sendMessage(Request $request, $id)
+    {
+        $user = Auth::user();
+        $conversation = Conversation::findOrFail($id);
+
+        $request->validate([
+            'message_text' => 'nullable|string|max:1000',
+            'attachment'   => 'nullable|file|mimes:jpeg,png,jpg,pdf,doc,docx|max:2048', 
+            'latitude'     => 'nullable|numeric',
+            'longitude'    => 'nullable|numeric',
+        ]);
+
+        $filePath = null;
+        $fileType = null;
+        $messageText = $request->message_text;
+
+        if ($request->hasFile('attachment')) {
+            $file = $request->file('attachment');
+            $extension = strtolower($file->getClientOriginalExtension());
+            
+            if (in_array($extension, ['jpg', 'jpeg', 'png'])) {
+                $fileType = 'image';
+                // OPTIMIZED: Automatically compress and resize the chat image to 600px wide max
+                $filePath = $this->resizeAndSaveImage($file, 'attachments');
+            } else {
+                $fileType = 'document';
+                $filePath = $file->store('attachments', 'public'); // Keep PDFs raw
             }
         }
 
-        return view('Messages.Message', compact('user', 'conversations', 'activeConvo', 'messages'));
+        if ($request->filled('latitude') && $request->filled('longitude')) {
+            $fileType = 'location';
+            $messageText = "{$request->latitude},{$request->longitude}";
+        }
+
+        if (!$messageText && !$filePath) {
+            return back()->withErrors(['message_text' => 'Cannot send an empty message.']);
+        }
+
+        $message = Message::create([
+            'conversation_id' => $conversation->id,
+            'sender_id'       => $user->id,
+            'message_text'    => $messageText,
+            'file_path'       => $filePath,
+            'file_type'       => $fileType,
+        ]);
+
+        $conversation->update(['last_message_at' => now()]);
+
+        $recipientId = ($conversation->student_id === $user->id) ? $conversation->tutor_id : $conversation->student_id;
+        Notification::create([
+            'user_id'           => $recipientId,
+            'notification_type' => 'message',
+            'title'             => 'New Message from ' . $user->first_name,
+            'message'           => $fileType ? "Sent you a {$fileType}." : Str::limit($messageText, 50),
+            'action_url'        => route('messages.show', $user->username), // Redirects directly to sender's username
+        ]);
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => $message->load('sender')
+            ]);
+        }
+
+        return redirect()->route('messages.show', $user->username);
     }
 
-    // Handles sending a message
-    public function SendMessage(Request $request)
+    public function getNewMessages($id, Request $request)
     {
         $request->validate([
-            'conversation_id' => 'required|exists:conversations,id',
-            'message_text'    => 'required|string|max:2000',
+            'last_message_id' => 'required|integer'
         ]);
 
         $user = Auth::user();
 
-        // 1. Insert message into database
-        DB::table('messages')->insert([
-            'conversation_id' => $request->conversation_id,
-            'sender_id'       => $user->id,
-            'message_text'    => $request->message_text,
-            'is_read'         => false,
-            'created_at'      => now(),
-            'updated_at'      => now(),
-        ]);
+        $conversation = Conversation::where('id', $id)
+            ->where(function($q) use ($user) {
+                $q->where('student_id', $user->id)->orWhere('tutor_id', $user->id);
+            })
+            ->firstOrFail();
 
-        // 2. Update conversation's last active timestamp
-        DB::table('conversations')
-            ->where('id', $request->conversation_id)
-            ->update(['last_message_at' => now()]);
+        $newMessages = Message::where('conversation_id', $conversation->id)
+            ->where('id', '>', $request->last_message_id)
+            ->with('sender')
+            ->orderBy('created_at', 'asc')
+            ->get();
 
-        // 3. Redirect back to the conversation thread
-        return redirect()->route('Messages.Message', $request->conversation_id);
-    }
-
-
-    // --- REPLACE YOUR OLD getMessageCount METHOD WITH THIS ---
-    public function getMessageCount($id)
-    {
-        $count = DB::table('messages')
-            ->where('conversation_id', $id)
-            ->count();
-
-        // Find the sender of the latest message in this thread
-        $lastMessage = DB::table('messages')
-            ->where('conversation_id', $id)
-            ->orderBy('created_at', 'desc')
-            ->first();
+        Message::where('conversation_id', $conversation->id)
+            ->where('sender_id', '!=', $user->id)
+            ->whereNull('read_at')
+            ->update(['read_at' => now()]);
 
         return response()->json([
-            'count'          => $count,
-            'last_sender_id' => $lastMessage ? $lastMessage->sender_id : null
+            'messages' => $newMessages,
+            'current_user_id' => $user->id
         ]);
     }
 
+   
+    private function resizeAndSaveImage($file, $destinationPath)
+    {
+        list($width, $height, $type) = getimagesize($file);
+        
+        $maxDimension = 600; // Increased to 600px for crisp details in chat bubbles
+        $ratio = $width / $height;
+        
+        if ($ratio > 1) {
+            $newWidth = $maxDimension;
+            $newHeight = $maxDimension / $ratio;
+        } else {
+            $newWidth = $maxDimension * $ratio;
+            $newHeight = $maxDimension;
+        }
+
+        switch ($type) {
+            case IMAGETYPE_JPEG:
+                $src = imagecreatefromjpeg($file);
+                break;
+            case IMAGETYPE_PNG:
+                $src = imagecreatefrompng($file);
+                break;
+            default:
+                return $file->store($destinationPath, 'public');
+        }
+
+        $dst = imagecreatetruecolor($newWidth, $newHeight);
+
+        if ($type == IMAGETYPE_PNG) {
+            imagealphablending($dst, false);
+            imagesavealpha($dst, true);
+        }
+
+        imagecopyresampled($dst, $src, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
+
+        $filename = md5(uniqid()) . '.jpg';
+        $fullPath = storage_path('app/public/' . $destinationPath . '/' . $filename);
+
+        if (!file_exists(dirname($fullPath))) {
+            mkdir(dirname($fullPath), 0755, true);
+        }
+
+        imagejpeg($dst, $fullPath, 80); // Compress at 80%
+
+        imagedestroy($src);
+        imagedestroy($dst);
+
+        return $destinationPath . '/' . $filename;
+    }
 }
