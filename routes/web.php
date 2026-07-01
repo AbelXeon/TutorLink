@@ -10,6 +10,7 @@ use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\TeacherController;
+use App\Http\Controllers\AdminController;
 
 
 
@@ -59,90 +60,94 @@ Route::get('/privacy-policy', function () {
 
 
 
-// 3. Authenticated-Only Routes (Must be logged in)
+
 Route::middleware('auth')->group(function () {
-    // Tutor profile setup
-    Route::get('/profile/setup', 
-    [ProfileController::class, 'showTutorProfileSetup'])
-    ->name('tutor.profile.edit');
+     Route::get('/profile/setup', 
+     [ProfileController::class, 'showTutorProfileSetup'])
+     ->name('tutor.profile.edit');
+
     Route::post('/profile/setup', 
     [ProfileController::class, 'storeTutorProfileSetup'])
     ->name('tutor.profile.store');
 
-    // Teacher Dashboard
+    
     Route::get('/teacher/dashboard', 
     [ProfileController::class, 'showTeacherDashboard'])
     ->name('tutor.dashboard');
 
-     Route::get('/student/dashboard', 
-     [StudentController::class, 'showStudentDashboard'])
-     ->name('student.dashboard');
+    Route::get('/student/dashboard', 
+    [StudentController::class, 'showStudentDashboard'])
+    ->name('student.dashboard');
 
-Route::get('/tutors', 
-[SearchController::class, 'browseTutors'])
-->name('tutors.browse');
+    
 
+    Route::get('/tutors', 
+    [SearchController::class, 'browseTutors'])
+    ->name('tutors.browse');
 
-Route::get('/tutors/{username}', 
-[SearchController::class, 'showTutorProfile'])
-->name('tutors.profile');
+    Route::get('/tutors/{username}', 
+    [SearchController::class, 'showTutorProfile'])
+    ->name('tutors.profile');
 
-
-Route::post('/tutors/{username}/book',
- [BookingController::class, 'storeBooking'])->name('tutors.book.store');
-
-     
-    // Tutor Booking Routes (Uses secure Username parameters)
-    Route::get('/tutors/{username}/book', 
-    [BookingController::class, 'showBookingForm'])->name('tutors.book');
 
 
     Route::post('/tutors/{username}/book', 
     [BookingController::class, 'storeBooking'])->name('tutors.book.store');
 
-      Route::post('/bookings/{id}/accept', 
-      [BookingController::class, 'acceptBooking'])
-      ->name('bookings.accept');
+    Route::post('/bookings/{id}/accept', 
+    [BookingController::class, 'acceptBooking'])->name('bookings.accept');
 
     Route::post('/bookings/{id}/reject', 
-    [BookingController::class, 'rejectBooking'])
-    ->name('bookings.reject');
-
-        Route::get('/notifications', 
-        [NotificationController::class, 'index'])
-        ->name('notifications.index');
-
- Route::post('/notifications/read-all', 
- [NotificationController::class, 'markAllAsRead'])
- ->name('notifications.read.all');
+    [BookingController::class, 'rejectBooking'])->name('bookings.reject');
 
 
- Route::get('/api/notifications/unread-count', 
- [NotificationController::class, 'getUnreadCount'])
- ->name('notifications.unread.count');
+
+    Route::get('/notifications', 
+    [NotificationController::class, 'index'])->name('notifications.index');
+
+    Route::post('/notifications/read-all', 
+    [NotificationController::class, 'markAllAsRead'])
+    ->name('notifications.read.all');
+
+    Route::get('/api/notifications/unread-count',
+     [NotificationController::class, 'getUnreadCount'])
+     ->name('notifications.unread.count');
 
     Route::post('/notifications/{id}/read', 
-    [NotificationController::class, 'markAsRead'])
-    ->name('notifications.read');
+    [NotificationController::class, 'markAsRead'])->name('notifications.read');
 
-    
+
+
     Route::get('/messages', 
     [MessageController::class, 'index'])->name('messages.index');
+
     Route::get('/messages/{username}', 
     [MessageController::class, 'show'])->name('messages.show');
+
     Route::post('/conversations/{id}/send', 
     [MessageController::class, 'sendMessage'])->name('messages.store');
-    Route::get('/api/conversations/{id}/updates',
+
+    Route::get('/api/conversations/{id}/updates', 
     [MessageController::class, 'getNewMessages'])->name('messages.updates');
 
+    
 
 
-
-    // Logout
-    Route::post('/logout', [AuthController::class, 'logout'])
-    ->name('logout'); 
+    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 });
 
 
 
+
+Route::middleware(['auth', 'admin'])->group(function () {
+    
+    
+    Route::get('/admin/dashboard', 
+    [AdminController::class, 'showDashboard'])->name('admin.dashboard');
+    
+    
+    Route::post('/admin/register-admin', 
+    [AdminController::class, 'storeAdmin'])->name('admin.store');
+    
+});
 

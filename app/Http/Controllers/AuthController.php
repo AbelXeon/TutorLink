@@ -333,6 +333,11 @@ class AuthController extends Controller
                 if ($roleType === 'student') {
                     return redirect()->intended(route('student.dashboard'))->with('success', 'Welcome back!');
                 }
+                
+
+                  if (in_array($roleType, ['admin', 'super_admin'])) {
+                    return redirect()->intended(route('admin.dashboard'))->with('success', 'Welcome back to the Admin Dashboard!');
+                }
             }
 
             // Fallback redirect if no specific role matched
