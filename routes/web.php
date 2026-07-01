@@ -87,6 +87,10 @@ Route::get('/tutors/{username}',
 [SearchController::class, 'showTutorProfile'])
 ->name('tutors.profile');
 
+
+Route::post('/tutors/{username}/book',
+ [BookingController::class, 'storeBooking'])->name('tutors.book.store');
+
      
     // Tutor Booking Routes (Uses secure Username parameters)
     Route::get('/tutors/{username}/book', 
@@ -107,7 +111,12 @@ Route::get('/tutors/{username}',
         Route::get('/notifications', 
         [NotificationController::class, 'index'])
         ->name('notifications.index');
-        
+
+ Route::post('/notifications/read-all', 
+ [NotificationController::class, 'markAllAsRead'])
+ ->name('notifications.read.all');
+
+
  Route::get('/api/notifications/unread-count', 
  [NotificationController::class, 'getUnreadCount'])
  ->name('notifications.unread.count');

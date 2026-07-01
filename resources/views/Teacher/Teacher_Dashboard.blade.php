@@ -66,8 +66,7 @@
                     </div>
                 </div>
 
-
-                <!-- NEW: Pending Lesson Requests Panel -->
+                <!-- 1. Pending Lesson Requests Panel -->
                 <div class="mt-8 border-t border-gray-100 pt-8">
                     <h4 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">Pending Booking Requests</h4>
                     
@@ -117,6 +116,51 @@
                     @endif
                 </div>
 
+                <!-- NEW: Active Students & Lessons Panel (Lists Accepted sessions with direct chat links) -->
+                <div class="mt-8 border-t border-gray-100 pt-8">
+                    <h4 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">My Active Students & Lessons</h4>
+                    
+                    @if($activeBookings->count() > 0)
+                        <div class="overflow-x-auto border border-gray-200 rounded-md">
+                            <table class="min-w-full divide-y divide-gray-200 bg-white">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Student</th>
+                                        <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Scheduled Date</th>
+                                        <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Time Slot</th>
+                                        <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-200 text-sm text-gray-700">
+                                    @foreach($activeBookings as $active)
+                                        <tr>
+                                            <td class="px-6 py-4 whitespace-nowrap font-bold text-gray-900">
+                                                {{ $active->student->first_name }} {{ $active->student->last_name }}
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-gray-500">
+                                                {{ \Carbon\Carbon::parse($active->session_date)->format('M d, Y') }}
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-xs text-indigo-600 font-semibold">
+                                                {{ \Carbon\Carbon::parse($active->start_time)->format('g:i A') }} - {{ \Carbon\Carbon::parse($active->end_time)->format('g:i A') }}
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <!-- Secure chat link mapping directly to student's unique username -->
+                                                <a href="{{ route('messages.show', $active->student->username) }}" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 border border-indigo-100 transition shadow-sm select-none">
+                                                    💬 Chat with Student
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @else
+                        <div class="text-center py-8 bg-gray-50 rounded-md border border-dashed border-gray-200">
+                            <p class="text-sm text-gray-500 italic">No active students or scheduled lessons at the moment.</p>
+                        </div>
+                    @endif
+                </div>
+
                 <!-- Selected Grade Levels as styled badges -->
                 <div class="mt-8 border-t border-gray-100 pt-8">
                     <h4 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">Grade Levels You Teach</h4>
@@ -131,14 +175,14 @@
                     </div>
                 </div>
 
-                <!-- UPDATED: Selected Category & Subjects as separate badges -->
+                <!-- Selected Category & Subjects as separate badges -->
                 <div class="mt-8 border-t border-gray-100 pt-8">
                     <h4 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">Teaching Specialty</h4>
                     
                     @if($tutorProfile->subjects->count() > 0)
                         <!-- Displays Category -->
                         <p class="text-sm text-gray-700 mb-2">
-                            Main Category: <strong class="text-indigo-600">{{ $tutorProfile->subjects->first()->category->name }}</strong>
+                            Main Category: <strong class="text-indigo-600">{{ $tutorProfile->subjects->first()->category?->name }}</strong>
                         </p>
                         
                         <!-- Displays Subjects -->
@@ -154,38 +198,35 @@
                     @endif
                 </div>
 
-                
-
-                
-<!-- NEW: Weekly Availability Schedule displays on the Dashboard -->
-<div class="mt-8 border-t border-gray-100 pt-8">
-    <h4 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">Weekly Availability Schedule</h4>
-    
-    @if($schedules->count() > 0)
-        <div class="overflow-hidden border border-gray-200 rounded-md">
-            <table class="min-w-full divide-y divide-gray-200 bg-gray-50">
-                <thead class="bg-gray-100">
-                    <tr>
-                        <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Day</th>
-                        <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Start Time</th>
-                        <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">End Time</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-200 bg-white text-sm text-gray-700">
-                    @foreach($schedules as $sched)
-                        <tr>
-                            <td class="px-6 py-4 whitespace-nowrap font-semibold text-gray-900">{{ $sched->day_of_week }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap">{{ \Carbon\Carbon::parse($sched->start_time)->format('g:i A') }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap">{{ \Carbon\Carbon::parse($sched->end_time)->format('g:i A') }}</td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-    @else
-        <span class="text-sm text-gray-500 italic">No availability slots configured yet. Click "Edit Profile" to add.</span>
-    @endif
-</div>
+                <!-- Weekly Availability Schedule -->
+                <div class="mt-8 border-t border-gray-100 pt-8">
+                    <h4 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">Weekly Availability Schedule</h4>
+                    
+                    @if($schedules->count() > 0)
+                        <div class="overflow-hidden border border-gray-200 rounded-md">
+                            <table class="min-w-full divide-y divide-gray-200 bg-gray-50">
+                                <thead class="bg-gray-100">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Day</th>
+                                        <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Start Time</th>
+                                        <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">End Time</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-200 bg-white text-sm text-gray-700">
+                                    @foreach($schedules as $sched)
+                                        <tr>
+                                            <td class="px-6 py-4 whitespace-nowrap font-semibold text-gray-900">{{ $sched->day_of_week }}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap">{{ \Carbon\Carbon::parse($sched->start_time)->format('g:i A') }}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap">{{ \Carbon\Carbon::parse($sched->end_time)->format('g:i A') }}</td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @else
+                        <span class="text-sm text-gray-500 italic">No availability slots configured yet. Click "Edit Profile" to add.</span>
+                    @endif
+                </div>
 
                 <!-- Tutor Biography -->
                 <div class="mt-8 border-t border-gray-100 pt-8">
@@ -198,7 +239,4 @@
             </div>
         </div>
     </div>
-
-
-
 @endsection

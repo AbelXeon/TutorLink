@@ -67,10 +67,9 @@
     <!-- TUTOR RESULTS LIST -->
     <div class="lg:col-span-3 space-y-6">
         @forelse($tutors as $tutor)
-            <!-- Tutor Card (Matching Your Image) -->
+            <!-- Tutor Card -->
             <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 flex flex-col md:flex-row gap-6 relative">
                 
-
                 <!-- Left Column: Square Image with Active Status Indicator -->
                 <div class="relative w-32 h-32 md:w-36 md:h-36 flex-shrink-0">
                     @if($tutor->user->profile_image)
@@ -80,7 +79,6 @@
                             {{ substr($tutor->user->first_name, 0, 1) }}{{ substr($tutor->user->last_name, 0, 1) }}
                         </div>
                     @endif
-                    <!-- Green active status square -->
                     <span class="absolute bottom-0 right-0 block h-4 w-4 rounded-sm bg-green-500 ring-2 ring-white"></span>
                 </div>
 
@@ -90,7 +88,6 @@
                         <h4 class="text-xl font-bold text-gray-900">
                             {{ $tutor->user->first_name }} {{ substr($tutor->user->last_name, 0, 1) }}.
                         </h4>
-                        <!-- Verification Checkmark -->
                         <span class="text-blue-500" title="Verified Tutor">✓</span>
                     </div>
 
@@ -102,20 +99,16 @@
                         <span>📍 {{ $tutor->user->location?->name }}, {{ $tutor->user->address }}</span>
                     </div>
 
-                    <!-- Specialty Subjects -->
                     <p class="text-sm font-semibold text-indigo-600">
                         {{ $tutor->subjects->pluck('name')->implode(', ') }}
                     </p>
 
-                    <!-- Short Bio Snippet -->
                     <p class="text-sm text-gray-600 line-clamp-2 pr-12">
                         {{ $tutor->bio }}
                     </p>
 
-                    <a href="{{ route('tutors.profile', $tutor->user->username) }}" 
-                      aria-label="View {{ $tutor->user->first_name }}'s full teaching profile" 
-                      class="inline-block text-xs font-bold text-indigo-600 hover:underline">
-                      View profile &rarr;
+                    <a href="{{ route('tutors.profile', $tutor->user->username) }}" aria-label="View {{ $tutor->user->first_name }}'s full teaching profile" class="inline-block text-xs font-bold text-indigo-600 hover:underline">
+                        View profile &rarr;
                     </a>
                 </div>
 
@@ -125,10 +118,9 @@
                         <div class="text-2xl font-extrabold text-gray-900">
                             ETB {{ number_format($tutor->price_per_hour, 2) }}
                         </div>
-                        <span class="text-xs text-gray-500">Price_Per-Hour</span>
+                        <span class="text-xs text-gray-500">per-hour lesson</span>
                     </div>
 
-                    <!-- Statistics (Stars / Students / Lessons) -->
                     <div class="grid grid-cols-3 gap-2 text-center my-3 bg-gray-50 p-2 rounded-md">
                         <div>
                             <span class="block text-xs font-bold text-gray-900">5.0 ★</span>
@@ -144,13 +136,14 @@
                         </div>
                     </div>
 
-                    <!-- Call To Action Buttons -->
+                    <!-- Call To Action Buttons (Updated to trigger modal instantly) -->
                     <div class="space-y-2">
-                <!-- Secure, dynamic link to the booking form passing the tutor's username -->
-                 <a href="{{ route('tutors.book', $tutor->user->username) }}" class="w-full block text-center py-2 px-3 text-xs font-bold rounded-md text-white bg-rose-700 hover:bg-rose-800 transition shadow-sm">
-                       Book lesson
-                     </a>
-                        <a href="#" class="w-full block text-center py-2 px-3 text-xs font-bold rounded-md text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 transition">
+                        <button type="button" 
+                            onclick="openBookingModal('{{ $tutor->user->username }}', '{{ $tutor->user->first_name }} {{ $tutor->user->last_name }}', {{ json_encode($tutor->user->schedules) }})"
+                            class="w-full block text-center py-2 px-3 text-xs font-bold rounded-md text-white bg-rose-700 hover:bg-rose-800 transition shadow-sm">
+                            Book lesson
+                        </button>
+                        <a href="{{ route('messages.show', $tutor->user->username) }}" class="w-full block text-center py-2 px-3 text-xs font-bold rounded-md text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 transition">
                             Send message
                         </a>
                     </div>
@@ -166,15 +159,92 @@
 
 </div>
 
-<!-- JAVASCRIPT FOR CASCADING DROPDOWNS -->
+<!-- INTERACTIVE BOOKING MODAL (Blurred backdrop overlay) -->
+<div id="booking_modal" class="hidden fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-black bg-opacity-50 backdrop-blur-sm select-none transition duration-300">
+    <div class="bg-white rounded-lg shadow-xl border border-gray-200 w-full max-w-xl p-8 relative">
+        
+        <!-- Close Button (X) -->
+        <button type="button" id="close_booking_modal" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 focus:outline-none">
+            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+        </button>
+
+        <div class="border-b border-gray-200 pb-4 mb-6">
+            <h2 class="text-2xl font-extrabold text-gray-900">Book a Lesson</h2>
+            <p class="text-sm text-gray-500 mt-1">
+                Schedule a session with <strong id="modal_tutor_name" class="text-indigo-600"></strong>
+            </p>
+        </div>
+
+        <!-- Submission Form (Action updated dynamically via JS) -->
+        <form id="booking_form" action="" method="POST" class="space-y-6">
+            @csrf
+
+            <!-- Hidden inputs for validation errors and actual selection submission -->
+            <input type="hidden" id="session_date" name="session_date" required>
+            <input type="hidden" id="start_time" name="start_time" required>
+            <input type="hidden" id="end_time" name="end_time" required>
+            <input type="hidden" id="old_tutor_username" name="old_tutor_username">
+            <input type="hidden" id="old_tutor_name" name="old_tutor_name">
+            <input type="hidden" id="old_tutor_schedules" name="old_tutor_schedules">
+
+            <!-- 1. Highlighted Calendar Grid -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-3">Select Date (Highlighted Days are Available)</label>
+                <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <div class="flex justify-between items-center mb-4">
+                        <span id="calendar_month_year" class="text-sm font-bold text-gray-900"></span>
+                        <div class="flex gap-2">
+                            <button type="button" id="prev_month" class="p-1.5 text-gray-600 hover:bg-gray-200 rounded-md text-xs font-bold">&larr;</button>
+                            <button type="button" id="next_month" class="p-1.5 text-gray-600 hover:bg-gray-200 rounded-md text-xs font-bold">&rarr;</button>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-7 gap-1 text-center text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                        <span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span>
+                    </div>
+
+                    <div id="calendar_days_grid" class="grid grid-cols-7 gap-1 text-center">
+                        <!-- Populated via JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Dynamic Available Slots -->
+            <div id="slots_section" class="hidden">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Available Time Slots</label>
+                <div id="slots_container" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <!-- Populated via JS -->
+                </div>
+            </div>
+
+            <!-- 3. Booking Notes -->
+            <div>
+                <label for="note" class="block text-sm font-medium text-gray-700">Message / Note to Tutor (Optional)</label>
+                <textarea id="note" name="note" rows="3" placeholder="Tell the tutor what topics you'd like to focus on during this lesson..." class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">{{ old('note') }}</textarea>
+            </div>
+
+            <div class="pt-4 border-t border-gray-100 flex justify-end gap-3">
+                <button type="button" id="cancel_booking_modal" class="px-4 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition">
+                    Cancel
+                </button>
+                <button type="submit" id="submit_btn" disabled class="px-5 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-sm">
+                    Request Session Booking
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- JAVASCRIPT: FILTER DROPDOWNS & MODAL CALENDAR HANDLERS -->
 <script>
-    // 1. Mapped Locations/Addresses
+    // --- SIDEBAR DROPDOWNS MAPS ---
     const addressOptions = {
         "1": ["Bole", "Megenagna", "Piazza (Addis)", "Arat Kilo", "Sarbet", "Kazanchis"],
         "2": ["Piassa (Hawassa)", "Atote", "Alamura", "Tabor", "Millennium", "Chefe"]
     };
 
-    // 2. Mapped Categories/Subjects
     const categoryOptions = {
         @foreach($categories as $category)
             "{{ $category->id }}": [
@@ -238,5 +308,201 @@
 
     if (locationSelect.value) updateAddresses();
     if (categorySelect.value) updateSubjects();
+
+
+    // --- DYNAMIC BOOKING MODAL CONTROLLER ---
+    const bookingModal = document.getElementById('booking_modal');
+    const closeBookingBtn = document.getElementById('close_booking_modal');
+    const cancelBookingBtn = document.getElementById('cancel_booking_modal');
+    const modalTutorName = document.getElementById('modal_tutor_name');
+    const bookingForm = document.getElementById('booking_form');
+
+    const calendarMonthYear = document.getElementById('calendar_month_year');
+    const calendarDaysGrid = document.getElementById('calendar_days_grid');
+    const prevMonthBtn = document.getElementById('prev_month');
+    const nextMonthBtn = document.getElementById('next_month');
+
+    const sessionDateInput = document.getElementById('session_date');
+    const slotsSection = document.getElementById('slots_section');
+    const slotsContainer = document.getElementById('slots_container');
+    const startTimeInput = document.getElementById('start_time');
+    const endTimeInput = document.getElementById('end_time');
+    const submitBtn = document.getElementById('submit_btn');
+
+    // Fields for preserving error redirects
+    const oldTutorUsername = document.getElementById('old_tutor_username');
+    const oldTutorName = document.getElementById('old_tutor_name');
+    const oldTutorSchedules = document.getElementById('old_tutor_schedules');
+
+    let currentDate = new Date();
+    const today = new Date();
+    let activeTutorSchedules = [];
+    let tutorActiveWeekdays = [];
+
+    // Triggered when clicking "Book Lesson" on a card
+    function openBookingModal(username, fullName, schedulesJson) {
+        // Set dynamic form action securely
+        bookingForm.action = "/tutors/" + username + "/book";
+
+        modalTutorName.textContent = fullName;
+        activeTutorSchedules = schedulesJson;
+        tutorActiveWeekdays = [...new Set(activeTutorSchedules.map(s => s.day_of_week))];
+
+        // Store references in hidden fields for validation recovery
+        oldTutorUsername.value = username;
+        oldTutorName.value = fullName;
+        oldTutorSchedules.value = JSON.stringify(schedulesJson);
+
+        // Reset variables
+        sessionDateInput.value = '';
+        startTimeInput.value = '';
+        endTimeInput.value = '';
+        slotsSection.classList.add('hidden');
+        submitBtn.disabled = true;
+
+        currentDate = new Date(); // Reset calendar month to today
+        renderCalendar();
+
+        bookingModal.classList.remove('hidden');
+    }
+
+    function closeBookingModal() {
+        bookingModal.classList.add('hidden');
+    }
+
+    closeBookingBtn.addEventListener('click', closeBookingModal);
+    cancelBookingBtn.addEventListener('click', closeBookingModal);
+
+    // Close on background click
+    bookingModal.addEventListener('click', (e) => {
+        if (e.target === bookingModal) {
+            closeBookingModal();
+        }
+    });
+
+    function renderCalendar() {
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth();
+
+        const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+        calendarMonthYear.textContent = `${monthNames[month]} ${year}`;
+
+        calendarDaysGrid.innerHTML = '';
+
+        const firstDayIndex = new Date(year, month, 1).getDay();
+        const totalDays = new Date(year, month + 1, 0).getDate();
+
+        for (let i = 0; $index = i < firstDayIndex; i++) {
+            const blank = document.createElement('span');
+            calendarDaysGrid.appendChild(blank);
+        }
+
+        for (let dayNum = 1; dayNum <= totalDays; dayNum++) {
+            const dateObj = new Date(year, month, dayNum);
+            const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
+            
+            const weekdaysMap = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const dayName = weekdaysMap[dateObj.getDay()];
+
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = "h-8 w-8 text-xs font-semibold rounded-full flex items-center justify-center mx-auto transition select-none ";
+
+            const isFutureOrToday = dateObj.setHours(0,0,0,0) >= today.setHours(0,0,0,0);
+            const isAvailableDay = tutorActiveWeekdays.includes(dayName);
+
+            if (isFutureOrToday && isAvailableDay) {
+                button.classList.add('bg-indigo-50', 'text-indigo-600', 'hover:bg-indigo-100', 'cursor-pointer', 'border', 'border-indigo-200');
+                button.setAttribute('data-date', dateString);
+                button.setAttribute('data-day', dayName);
+
+                button.addEventListener('click', function() {
+                    document.querySelectorAll('[data-date]').forEach(btn => {
+                        btn.classList.remove('bg-indigo-600', 'text-white', 'hover:bg-indigo-700');
+                        btn.classList.add('bg-indigo-50', 'text-indigo-600', 'hover:bg-indigo-100');
+                    });
+
+                    this.classList.remove('bg-indigo-50', 'text-indigo-600', 'hover:bg-indigo-100');
+                    this.classList.add('bg-indigo-600', 'text-white', 'hover:bg-indigo-700');
+
+                    sessionDateInput.value = dateString;
+                    showSlots(dayName);
+                });
+            } else {
+                button.classList.add('text-gray-300', 'cursor-not-allowed');
+                button.disabled = true;
+            }
+
+            button.textContent = dayNum;
+            calendarDaysGrid.appendChild(button);
+        }
+    }
+
+    function showSlots(dayName) {
+        slotsContainer.innerHTML = '';
+        submitBtn.disabled = true;
+        startTimeInput.value = '';
+        endTimeInput.value = '';
+
+        const availableSlots = activeTutorSchedules.filter(sched => sched.day_of_week === dayName);
+
+        if (availableSlots.length > 0) {
+            slotsSection.classList.remove('hidden');
+
+            availableSlots.forEach(slot => {
+                const button = document.createElement('button');
+                button.type = 'button';
+                
+                // Format display dynamically
+                const startClean = slot.start_time.substring(0, 5);
+                const endClean = slot.end_time.substring(0, 5);
+
+                button.className = "time-slot-btn py-2.5 px-4 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:border-indigo-500 hover:bg-indigo-50 transition text-center";
+                button.textContent = `${startClean} - ${endClean}`;
+
+                button.addEventListener('click', function() {
+                    document.querySelectorAll('.time-slot-btn').forEach(btn => {
+                        btn.classList.remove('border-indigo-600', 'bg-indigo-50', 'text-indigo-700');
+                    });
+
+                    this.classList.add('border-indigo-600', 'bg-indigo-50', 'text-indigo-700');
+
+                    // Save times
+                    startTimeInput.value = slot.start_time.substring(0, 5);
+                    endTimeInput.value = slot.end_time.substring(0, 5);
+                    submitBtn.disabled = false;
+                });
+
+                slotsContainer.appendChild(button);
+            });
+        }
+    }
+
+    prevMonthBtn.addEventListener('click', () => {
+        currentDate.setMonth(currentDate.getMonth() - 1);
+        renderCalendar();
+    });
+
+    nextMonthBtn.addEventListener('click', () => {
+        currentDate.setMonth(currentDate.getMonth() + 1);
+        renderCalendar();
+    });
+
+    // --- HEAL RECOVERY AFTER VALIDATION FAILURE REDIRECTS ---
+    @if($errors->any() && old('session_date'))
+        window.addEventListener('DOMContentLoaded', () => {
+            const rawScheds = {!! old('old_tutor_schedules') !!};
+            openBookingModal("{{ old('old_tutor_username') }}", "{{ old('old_tutor_name') }}", rawSchedules);
+            
+            // Re-select old date
+            sessionDateInput.value = "{{ old('session_date') }}";
+            const parts = sessionDateInput.value.split('-');
+            currentDate = new Date(parts[0], parts[1] - 1, parts[2]);
+            renderCalendar();
+            
+            const activeBtn = document.querySelector(`[data-date="${sessionDateInput.value}"]`);
+            if (activeBtn) activeBtn.click();
+        });
+    @endif
 </script>
 @endsection

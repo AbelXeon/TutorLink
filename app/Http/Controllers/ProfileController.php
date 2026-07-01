@@ -140,16 +140,15 @@ class ProfileController extends Controller
         return redirect()->route('tutor.dashboard')->with('success', 'Your tutor profile has been updated!');
     }
 
-    // 3. Render Dashboard
+
+    
     public function showTeacherDashboard()
     {
         $user = Auth::user();
         $tutorProfile = TutorProfile::where('user_id', $user->id)->firstOrFail();
         $gradeLevels = GradeLevels::all();
-        $categories = Categories::with('subjects')->get(); 
-
-             
-        // Load schedules to display on Dashboard
+        $categories = Categories::with('subjects')->get();
+        
         $schedules = $user->schedules()->orderBy(DB::raw("CASE 
             WHEN day_of_week = 'Monday' THEN 1
             WHEN day_of_week = 'Tuesday' THEN 2
@@ -160,16 +159,27 @@ class ProfileController extends Controller
             WHEN day_of_week = 'Sunday' THEN 7
         END"))->get();
 
-         // NEW: Fetch all pending lesson requests for this tutor from students
+        // 1. Fetch pending lesson requests from students
         $pendingBookings = \App\Models\Booking::where('tutor_id', $user->id)
             ->where('status', 'pending')
             ->with('student')
             ->orderBy('created_at', 'desc')
             ->get();
 
-        return view('Teacher.Teacher_Dashboard', 
-        compact('user', 'tutorProfile', 'gradeLevels', 'categories','schedules','pendingBookings'));
+        // 2. NEW: Fetch all accepted (active) student bookings from the database
+        $activeBookings = \App\Models\Booking::where('tutor_id', $user->id)
+            ->where('status', 'accepted')
+            ->with('student')
+            ->orderBy('session_date', 'asc')
+            ->get();
+
+        // Pass 'activeBookings' inside the compact() array
+        return view('Teacher.Teacher_Dashboard', compact(
+            'user', 'tutorProfile', 'gradeLevels', 'categories', 'schedules', 'pendingBookings', 'activeBookings'
+        ));
     }
+
+
 
      private function resizeAndSaveImage($file, $destinationPath)
     {

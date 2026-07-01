@@ -22,31 +22,83 @@
                     </span>
                 </div>
 
-                <!-- Header Icons -->
+                <!-- Icons (Notification Dropdown, Messages, Settings) -->
                 <div class="flex items-center space-x-6">
-                    <!-- Messages Icon (Updated with dynamic route link) -->
+                    <!-- Messages Icon -->
                     <a href="{{ route('messages.index') }}" class="text-gray-500 hover:text-indigo-600 transition" title="Messages">
                         <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                         </svg>
                     </a>
 
-                    <!-- Notification Icon (Updated with IDs for Javascript targets) -->
+                    <!-- DYNAMIC NOTIFICATION DROPDOWN CONTAINER -->
                     @auth
                         @php
                             $unreadCount = \App\Models\Notification::where('user_id', Auth::id())->where('read_at', false)->count();
+                            $recentNotifications = \App\Models\Notification::where('user_id', Auth::id())
+                                ->orderBy('created_at', 'desc')
+                                ->limit(5)
+                                ->get();
                         @endphp
                     @endauth
-                    <a href="{{ route('notifications.index') }}" id="notification-link" class="text-gray-500 hover:text-indigo-600 transition relative inline-flex items-center justify-center p-1 rounded-full" title="Notifications">
-                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                        </svg>
-                        @if(isset($unreadCount) && $unreadCount > 0)
-                            <span id="notification-badge" class="absolute top-0 right-0 block h-4 w-4 rounded-full bg-red-500 text-[9px] font-bold text-white text-center leading-4 shadow-sm">
-                                {{ $unreadCount }}
-                            </span>
-                        @endif
-                    </a>
+                    
+                    <div class="relative inline-block text-left" id="notification_dropdown_container">
+                        <button type="button" id="notification-link" class="text-gray-500 hover:text-indigo-600 transition relative flex items-center justify-center p-1 rounded-full focus:outline-none" title="Notifications">
+                            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                            </svg>
+                            @if(isset($unreadCount) && $unreadCount > 0)
+                                <span id="notification-badge" class="absolute top-0 right-0 block h-4 w-4 rounded-full bg-red-500 text-[9px] font-bold text-white text-center leading-4 shadow-sm">
+                                    {{ $unreadCount }}
+                                </span>
+                            @endif
+                        </button>
+
+                        <!-- DROPDOWN PANEL (Hidden by default) -->
+                        <div id="notification_dropdown" class="hidden absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border border-gray-200 z-50 overflow-hidden">
+                            <!-- Dropdown Header -->
+                            <div class="px-4 py-3 bg-gray-50 border-b border-gray-150 flex items-center justify-between">
+                                <span class="text-xs font-bold text-gray-900 uppercase tracking-wider">Alerts</span>
+                                @if(isset($unreadCount) && $unreadCount > 0)
+                                    <form action="{{ route('notifications.read.all') }}" method="POST">
+                                        @csrf
+                                        <button type="submit" class="text-[10px] font-bold text-indigo-600 hover:text-indigo-800">
+                                            Mark all read
+                                        </button>
+                                    </form>
+                                @endif
+                            </div>
+
+                            <!-- Dropdown Items List -->
+                            <div class="max-h-64 overflow-y-auto divide-y divide-gray-100" id="dropdown_list_container">
+                                @forelse($recentNotifications ?? [] as $notif)
+                                    <div class="p-3 text-xs transition {{ !$notif->read_at ? 'bg-indigo-50/50' : '' }}">
+                                        <div class="flex justify-between items-baseline mb-0.5">
+                                            <span class="font-bold text-gray-900 truncate pr-4">{{ $notif->title }}</span>
+                                            <span class="text-[9px] text-gray-400 flex-shrink-0">{{ $notif->created_at->diffForHumans() }}</span>
+                                        </div>
+                                        <p class="text-gray-600 line-clamp-2">{{ $notif->message }}</p>
+                                        
+                                        @if(!$notif->read_at)
+                                            <form action="{{ route('notifications.read', $notif->id) }}" method="POST" class="mt-1">
+                                                @csrf
+                                                <button type="submit" class="text-[10px] font-bold text-indigo-600 hover:text-indigo-800">
+                                                    View Details &rarr;
+                                                </button>
+                                            </form>
+                                        @endif
+                                    </div>
+                                @empty
+                                    <p class="text-xs text-gray-500 italic p-6 text-center">No alerts found.</p>
+                                @endforelse
+                            </div>
+
+                            <!-- Dropdown Footer -->
+                            <a href="{{ route('notifications.index') }}" class="block text-center py-2 bg-gray-50 border-t border-gray-150 text-[10px] font-bold text-indigo-600 hover:bg-gray-100">
+                                See all notifications
+                            </a>
+                        </div>
+                    </div>
 
                     <!-- Settings Icon -->
                     <a href="#" class="text-gray-500 hover:text-indigo-600 transition" title="Settings">
@@ -78,22 +130,36 @@
         let currentUnreadCount = {{ $unreadCount ?? 0 }};
         let isAudioUnlocked = false;
 
-        // 1. AUDIO UNLOCKER: Unlocks browser autoplay rules on the user's first click
+        // Toggle Dropdown Panel
+        const dropdownContainer = document.getElementById('notification_dropdown_container');
+        const dropdownBtn = document.getElementById('notification-link');
+        const dropdownPanel = document.getElementById('notification_dropdown');
+
+        dropdownBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            dropdownPanel.classList.toggle('hidden');
+        });
+
+        // Close dropdown when clicking anywhere else
+        document.addEventListener('click', (e) => {
+            if (!dropdownContainer.contains(e.target)) {
+                dropdownPanel.classList.add('hidden');
+            }
+        });
+
         function unlockAudioContext() {
             if (isAudioUnlocked) return;
 
-            let silentAudio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-120.wav');
-            silentAudio.volume = 0; // Play silently to unlock
+            let silentAudio = new Audio('/sounds/notification.mp3');
+            silentAudio.volume = 0;
             silentAudio.play()
                 .then(() => {
                     isAudioUnlocked = true;
-                    // Remove listener once successfully unlocked
                     document.removeEventListener('click', unlockAudioContext);
                 })
-                .catch(e => console.log("Audio unlock deferred until user interaction."));
+                .catch(e => console.log("Audio unlock deferred."));
         }
 
-        // Listen for first click anywhere on the page to unlock audio safely
         document.addEventListener('click', unlockAudioContext);
 
         function checkNotifications() {
@@ -105,21 +171,20 @@
                     if (newCount > currentUnreadCount) {
                         currentUnreadCount = newCount;
 
-                   let alertSound = new Audio('/sounds/notification.mp3');
-
-                        alertSound.volume = 0.8; // Set volume to 80%
-                        alertSound.play().catch(error => {
-                            console.log("Audio playback was blocked. Please click on the page to enable sound.");
-                        });
+                        let alertSound = new Audio('/sounds/notification.mp3');
+                        alertSound.volume = 0.8;
+                        alertSound.play().catch(e => console.log("Sound play deferred"));
 
                         updateBadgeDOM(newCount);
+                        // Refresh page details silently if we want to update the dropdown list dynamically:
+                        // (You can also fetch alerts via AJAX, but for now refreshing the page dynamically or on reload is standard).
                     } 
                     else if (newCount !== currentUnreadCount) {
                         currentUnreadCount = newCount;
                         updateBadgeDOM(newCount);
                     }
                 })
-                .catch(error => console.error("Error fetching notifications:", error));
+                .catch(error => console.error(error));
         }
 
         function updateBadgeDOM(count) {
