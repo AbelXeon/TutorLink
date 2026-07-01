@@ -47,4 +47,17 @@ class NotificationController extends Controller
         return back()->with('success', 'Notification marked as read.');
     }
 
+    // 3. API: Return unread notifications count for the authenticated user as JSON
+    public function getUnreadCount()
+    {
+        // Counts unread items safely
+        $count = Notification::where('user_id', \Illuminate\Support\Facades\Auth::id())
+            ->where('read_at', false)
+            ->count();
+
+        return response()->json([
+            'unread_count' => $count
+        ]);
+    }
+
 }

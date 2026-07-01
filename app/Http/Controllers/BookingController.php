@@ -24,9 +24,25 @@ class BookingController extends Controller
             ->firstOrFail();
 
         $tutorProfile = TutorProfile::where('user_id', $tutor->id)->firstOrFail();
-        $schedules = $tutor->schedules; // Get tutor availability slots
+        $schedules = $tutor->schedules; 
 
-        return view('Booking.Booking', compact('tutor', 'tutorProfile', 'schedules'));
+        
+ // Generate the rolling next 7 days from today
+        $availabilities = [];
+        for ($i = 0; $i < 7; $i++) {
+            $date = Carbon::today()->addDays($index = $i);
+            $availabilities[] = [
+                'date_string' => $date->format('Y-m-d'),
+                'day_name'    => $date->format('l'), // e.g. "Monday"
+                'formatted'   => $date->format('D, M d'), // e.g. "Mon, Jun 29"
+                'is_today'    => $date->isToday(),
+            ];
+        }
+
+        return view('Booking.Booking', 
+        compact('tutor', 'tutorProfile', 'schedules', 'availabilities'));
+
+
     }
 
     // 2. Save the Booking Request

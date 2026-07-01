@@ -107,7 +107,10 @@ Route::get('/tutors/{username}',
         Route::get('/notifications', 
         [NotificationController::class, 'index'])
         ->name('notifications.index');
-
+        
+ Route::get('/api/notifications/unread-count', 
+ [NotificationController::class, 'getUnreadCount'])
+ ->name('notifications.unread.count');
 
     Route::post('/notifications/{id}/read', 
     [NotificationController::class, 'markAsRead'])
