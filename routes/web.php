@@ -144,7 +144,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/settings/update-password',
     [SettingController::class, 'updatePassword'])
     ->name('settings.update_password');
-
+ Route::post('/bookings/{id}/review', 
+ [SearchController::class, 'storeReview'])->name('bookings.review.store');
 
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 });

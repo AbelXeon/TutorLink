@@ -53,6 +53,17 @@
                 </select>
             </div>
 
+            <!-- NEW: Teaching Mode Selection -->
+            <div>
+                <label for="teaching_mode" class="block text-xs font-bold text-gray-700 uppercase">Teaching Method</label>
+                <select id="teaching_mode" name="teaching_mode" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md text-sm focus:ring-indigo-500">
+                    <option value="">All Methods</option>
+                    <option value="online" {{ request('teaching_mode') == 'online' ? 'selected' : '' }}>Online</option>
+                    <option value="in-person" {{ request('teaching_mode') == 'in-person' ? 'selected' : '' }}>In-Person</option>
+                    <option value="hybrid" {{ request('teaching_mode') == 'hybrid' ? 'selected' : '' }}>Hybrid</option>
+                </select>
+            </div>
+
             <div class="pt-2">
                 <button type="submit" class="w-full flex justify-center py-2 px-4 border border-transparent text-sm font-semibold rounded-md text-white bg-indigo-600 hover:bg-indigo-700 transition">
                     Apply Filters
@@ -91,12 +102,17 @@
                         <span class="text-blue-500" title="Verified Tutor">✓</span>
                     </div>
 
-                    <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500 font-medium">
+                    <div class="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-gray-500 font-medium">
                         <span class="flex items-center gap-1">⭐ Super Tutor</span>
                         <span>•</span>
                         <span>🎓 {{ $tutor->qualification }}</span>
                         <span>•</span>
                         <span>📍 {{ $tutor->user->location?->name }}, {{ $tutor->user->address }}</span>
+                        <!-- NEW: Displays the tutor's specific teaching mode on their card -->
+                        <span>•</span>
+                        <span class="capitalize text-indigo-700 bg-indigo-50/60 px-2 py-0.5 rounded border border-indigo-100/50 font-bold">
+                            💻 {{ $tutor->teaching_mode }}
+                        </span>
                     </div>
 
                     <p class="text-sm font-semibold text-indigo-600">
@@ -123,8 +139,9 @@
 
                     <div class="grid grid-cols-3 gap-2 text-center my-3 bg-gray-50 p-2 rounded-md">
                         <div>
-                            <span class="block text-xs font-bold text-gray-900">5.0 ★</span>
-                            <span class="text-[10px] text-gray-500">reviews</span>
+                            <!-- Outputs dynamic aggregated reviews from Database -->
+                            <span class="block text-xs font-bold text-gray-900">{{ number_format($tutor->average_rating, 1) }} ★</span>
+                            <span class="text-[10px] text-gray-500">({{ $tutor->reviews_count }}) revs</span>
                         </div>
                         <div>
                             <span class="block text-xs font-bold text-gray-900">{{ $tutor->max_students }}</span>
@@ -392,7 +409,7 @@
         const firstDayIndex = new Date(year, month, 1).getDay();
         const totalDays = new Date(year, month + 1, 0).getDate();
 
-        for (let i = 0; $index = i < firstDayIndex; i++) {
+        for (let i = 0; i < firstDayIndex; i++) {
             const blank = document.createElement('span');
             calendarDaysGrid.appendChild(blank);
         }

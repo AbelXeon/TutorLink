@@ -20,7 +20,7 @@ class DatabaseSeeder extends Seeder
             LocationSeeder::class,
             GradeLevelsSeeder::class,
             CategoriesSeeder::class,
-             AdminSeeder::class,
+            AdminSeeder::class,
         ]);
     }
 }

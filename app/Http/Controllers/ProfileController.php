@@ -166,19 +166,29 @@ class ProfileController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        // 2. NEW: Fetch all accepted (active) student bookings from the database
+        // 2. Fetch all accepted (active) student bookings from the database
         $activeBookings = \App\Models\Booking::where('tutor_id', $user->id)
             ->where('status', 'accepted')
             ->with('student')
             ->orderBy('session_date', 'asc')
             ->get();
 
-        // Pass 'activeBookings' inside the compact() array
+        // 3. Fetch reviews from students for this specific tutor profile
+        $reviews = DB::table('reviews')
+            ->join('bookings', 'reviews.booking_id', '=', 'bookings.id')
+            ->join('users', 'bookings.student_id', '=', 'users.id')
+            ->where('bookings.tutor_id', $user->id)
+            ->select('reviews.*', 'users.first_name', 'users.last_name', 'users.profile_image')
+            ->orderBy('reviews.created_at', 'desc')
+            ->get();
+
+        $averageRating = $reviews->avg('rating') ?: 0.0;
+
+        // Pass 'activeBookings', 'reviews', and 'averageRating' inside the compact() array
         return view('Teacher.Teacher_Dashboard', compact(
-            'user', 'tutorProfile', 'gradeLevels', 'categories', 'schedules', 'pendingBookings', 'activeBookings'
+            'user', 'tutorProfile', 'gradeLevels', 'categories', 'schedules', 'pendingBookings', 'activeBookings', 'reviews', 'averageRating'
         ));
     }
-
 
 
      private function resizeAndSaveImage($file, $destinationPath)
@@ -198,10 +208,10 @@ class ProfileController extends Controller
 
         switch ($type) {
             case IMAGETYPE_JPEG:
-                $src = imagecreatefromjpeg($file);
+                $src = \imagecreatefromjpeg($file);
                 break;
             case IMAGETYPE_PNG:
-                $src = imagecreatefrompng($file);
+                $src = \imagecreatefrompng($file);
                 break;
             default:
                 return $file->store($destinationPath, 'public'); // Fallback in case GD fails

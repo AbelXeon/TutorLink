@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Review the TutorLink Terms of Service. Learn about platform usage, guidelines, and policies for students and tutors in Ethiopia.">
     <title>Terms of Service - TutorLink</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>

@@ -8,7 +8,7 @@
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
 
         @if(session('success'))
-            <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-8">
+            <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-8 shadow-sm">
                 {{ session('success') }}
             </div>
         @endif
@@ -59,7 +59,7 @@
                         <h4 class="text-sm font-bold text-gray-500 uppercase tracking-wider">Rates & Bookings</h4>
                         <ul class="mt-3 space-y-3 text-sm text-gray-900">
                             <li><strong>Price Per Hour:</strong> <span class="text-indigo-600 font-bold">{{ $tutorProfile->price_per_hour }} ETB/hr</span></li>
-                            <li><strong>Total Reviews Received:</strong> {{ $tutorProfile->total_reviews }}</li>
+                            <li><strong>Tutor Score Rating:</strong> <span class="text-amber-600 font-bold">{{ number_format($averageRating, 1) }} ★ ({{ $reviews->count() }} reviews)</span></li>
                             <li><strong>Contact Email:</strong> {{ $user->email }}</li>
                             <li><strong>Contact Phone:</strong> {{ $user->phone_number }}</li>
                         </ul>
@@ -116,7 +116,7 @@
                     @endif
                 </div>
 
-                <!-- NEW: Active Students & Lessons Panel (Lists Accepted sessions with direct chat links) -->
+                <!-- NEW: Active Students & Lessons Panel -->
                 <div class="mt-8 border-t border-gray-100 pt-8">
                     <h4 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">My Active Students & Lessons</h4>
                     
@@ -144,7 +144,6 @@
                                                 {{ \Carbon\Carbon::parse($active->start_time)->format('g:i A') }} - {{ \Carbon\Carbon::parse($active->end_time)->format('g:i A') }}
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap">
-                                                <!-- Secure chat link mapping directly to student's unique username -->
                                                 <a href="{{ route('messages.show', $active->student->username) }}" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 border border-indigo-100 transition shadow-sm select-none">
                                                     💬 Chat with Student
                                                 </a>
@@ -180,12 +179,9 @@
                     <h4 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">Teaching Specialty</h4>
                     
                     @if($tutorProfile->subjects->count() > 0)
-                        <!-- Displays Category -->
                         <p class="text-sm text-gray-700 mb-2">
                             Main Category: <strong class="text-indigo-600">{{ $tutorProfile->subjects->first()->category?->name }}</strong>
                         </p>
-                        
-                        <!-- Displays Subjects -->
                         <div class="flex flex-wrap gap-2">
                             @foreach($tutorProfile->subjects as $subject)
                                 <span class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold bg-green-50 text-green-700 border border-green-100">
@@ -234,6 +230,39 @@
                     <p class="text-gray-700 leading-relaxed text-sm bg-gray-50 p-6 rounded-md border border-gray-200">
                         {{ $tutorProfile->bio ?: 'No professional bio added yet.' }}
                     </p>
+                </div>
+
+                <!-- REVIEWS PANEL DISPLAY (Only visible to the logged-in tutor) -->
+                <div class="mt-8 border-t border-gray-100 pt-8">
+                    <h4 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">Reviews Received from Students</h4>
+                    
+                    @if($reviews->count() > 0)
+                        <div class="space-y-4">
+                            @foreach($reviews as $review)
+                                <div class="bg-gray-50 p-6 rounded-lg border border-gray-200">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-3">
+                                            <div class="w-10 h-10 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-sm">
+                                                {{ substr($review->first_name, 0, 1) }}
+                                            </div>
+                                            <div>
+                                                <h5 class="text-sm font-bold text-gray-900">{{ $review->first_name }} {{ $review->last_name }}</h5>
+                                                <span class="text-[10px] text-gray-400 font-semibold">{{ \Carbon\Carbon::parse($review->created_at)->diffForHumans() }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="text-amber-500 font-bold text-sm">
+                                            {{ str_repeat('★', $review->rating) }}{{ str_repeat('☆', 5 - $review->rating) }}
+                                        </div>
+                                    </div>
+                                    <p class="mt-3 text-sm text-gray-600 bg-white p-4 rounded border border-gray-100 italic">
+                                        "{{ $review->comment }}"
+                                    </p>
+                                </div>
+                            @endforeach
+                        </div>
+                    @else
+                        <p class="text-sm text-gray-500 italic">No reviews received from your students yet.</p>
+                    @endif
                 </div>
 
             </div>

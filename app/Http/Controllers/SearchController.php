@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 use App\Models\TutorProfile;
 use App\Models\Categories;   
 use App\Models\Location;     
@@ -46,7 +47,23 @@ class SearchController extends Controller
             });
         }
 
+        // NEW: Filter by Teaching Mode (online, in-person, hybrid)
+        if ($request->filled('teaching_mode')) {
+            $query->where('teaching_mode', $request->teaching_mode);
+        }
+
         $tutors = $query->get();
+
+        // Dynamically compute average ratings and counts for each tutor card
+        foreach ($tutors as $tutor) {
+            $tutorReviews = DB::table('reviews')
+                ->join('bookings', 'reviews.booking_id', '=', 'bookings.id')
+                ->where('bookings.tutor_id', $tutor->user_id)
+                ->get();
+            
+            $tutor->average_rating = $tutorReviews->avg('rating') ?: 0.0;
+            $tutor->reviews_count = $tutorReviews->count();
+        }
 
         // Load options for dropdowns
         $categories = Categories::with('subjects')->get();
@@ -55,7 +72,7 @@ class SearchController extends Controller
         return view('Search.Tutor_view', compact('tutors', 'categories', 'locations'));
     }
 
-    
+    // 2. Show Tutor Profile with Secure Review Retrieval
     public function showTutorProfile($username)
     {
         $tutor = TutorProfile::whereHas('user', function ($q) use ($username) {
@@ -65,7 +82,75 @@ class SearchController extends Controller
             ->with(['user.location', 'user.schedules', 'subjects.category', 'gradeLevels'])
             ->firstOrFail();
 
-        return view('Teacher.Teacher_profile', compact('tutor'));
+        // Retrieve verified student reviews for this tutor
+        $reviews = DB::table('reviews')
+            ->join('bookings', 'reviews.booking_id', '=', 'bookings.id')
+            ->join('users', 'bookings.student_id', '=', 'users.id')
+            ->where('bookings.tutor_id', $tutor->user_id)
+            ->select('reviews.*', 'users.first_name', 'users.last_name', 'users.profile_image')
+            ->orderBy('reviews.created_at', 'desc')
+            ->get();
+
+        $averageRating = $reviews->avg('rating') ?: 0.0;
+
+        // Check if the current authenticated user has an accepted unreviewed booking with this tutor
+        $unreviewedBooking = null;
+        if (Auth::check()) {
+            $unreviewedBooking = DB::table('bookings')
+                ->where('tutor_id', $tutor->user_id)
+                ->where('student_id', Auth::id())
+                ->where('status', 'accepted')
+                ->whereNotExists(function ($q) {
+                    $q->select(DB::raw(1))
+                      ->from('reviews')
+                      ->whereColumn('reviews.booking_id', 'bookings.id');
+                })
+                ->first();
+        }
+
+        return view('Teacher.Teacher_profile', compact('tutor', 'reviews', 'averageRating', 'unreviewedBooking'));
     }
-    
+
+    // 3. Secure Review Submission Controller Engine
+    public function storeReview(Request $request, $bookingId)
+    {
+        $request->validate([
+            'rating'  => 'required|integer|min:1|max:5',
+            'comment' => 'nullable|string|max:1000'
+        ]);
+
+        $user = Auth::user();
+
+        // Verify the booking belongs to this user, is accepted, and is valid
+        $booking = DB::table('bookings')
+            ->where('id', $bookingId)
+            ->where('student_id', $user->id)
+            ->where('status', 'accepted')
+            ->first();
+
+        if (!$booking) {
+            abort(403, 'Unauthorized. No accepted booking matches your session credentials.');
+        }
+
+        // Prevent double reviews on the same lesson booking
+        $existingReview = DB::table('reviews')->where('booking_id', $bookingId)->exists();
+        if ($existingReview) {
+            return back()->withErrors(['error' => 'You have already reviewed this lesson session.']);
+        }
+
+        // Secure DB insert (cleans comments with strip_tags for XSS protection)
+        DB::table('reviews')->insert([
+            'booking_id' => $bookingId,
+            'rating'     => $request->rating,
+            'comment'    => strip_tags($request->comment), 
+            'created_at' => now()
+        ]);
+
+        // Update the count on tutor profiles
+        DB::table('tutor_profiles')
+            ->where('user_id', $booking->tutor_id)
+            ->increment('total_reviews');
+
+        return back()->with('success', 'Thank you! Your review has been securely recorded.');
+    }
 }
