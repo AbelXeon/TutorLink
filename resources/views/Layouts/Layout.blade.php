@@ -16,7 +16,21 @@
                 
                 <!-- Logo & Brand -->
                 <div class="flex items-center space-x-2">
-                    <span class="text-xl font-bold text-indigo-600">TutorLink</span>
+                    @php
+                        // Dynamically resolve dashboard route based on user roles
+                        $dashboardRoute = route('Landing');
+                        if (Auth::check()) {
+                            $role = strtolower(Auth::user()->role?->role_type ?? '');
+                            if ($role === 'teacher') {
+                                $dashboardRoute = route('tutor.dashboard');
+                            } elseif ($role === 'student') {
+                                $dashboardRoute = route('student.dashboard');
+                            } 
+                        }
+                    @endphp
+                    <!-- Brand text is now clickable and routes users to their specific dashboard -->
+                    <a href="{{ $dashboardRoute }}" class="text-xl font-bold text-indigo-600 hover:text-indigo-700 transition">TutorLink</a>
+                    
                     <span class="bg-indigo-100 text-indigo-800 text-xs font-semibold px-2.5 py-0.5 rounded capitalize">
                         {{ strtolower(Auth::user()->role?->role_type ?? 'User') }}
                     </span>
