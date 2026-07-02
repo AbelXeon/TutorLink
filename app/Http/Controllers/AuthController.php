@@ -28,7 +28,6 @@ class AuthController extends Controller
         return view('Auth.Teacher_Register', compact('locations'));
     }
 
-    // Handle Teacher Registration Form Submission
     public function registerTeacher(Request $request)
     {
         $request->validate([
@@ -76,6 +75,7 @@ class AuthController extends Controller
                 'is_used'       => false,
                 'purpose'       => 'email_verification',
                 'expires_at'    => now()->addMinutes(15),
+                'created_at'    => now(), // Manually set created_at
             ]);
 
             Mail::to($user->email)->send(new SendVerificationCode($code));
@@ -88,9 +88,56 @@ class AuthController extends Controller
             return redirect()->route('verify.email.form')->with('success', 'Registration submitted. Please check your email for a verification code.');
 
         } catch (Exception $e) {
-    // This will temporarily bypass the generic message and show the real error screen
-    throw $e; 
-}
+            throw $e; 
+        }
+    }
+
+   public function resendVerificationCode(Request $request)
+    {
+        $email = session('pending_verification_email');
+        $userId = session('pending_verification_user_id');
+
+        if (!$email || !$userId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Session expired. Please register again.'
+            ], 422);
+        }
+
+        // Secure Rate Limiter Gatekeeper: 1 request per 60 seconds
+        $throttleKey = 'resend-email-verification:' . $userId;
+        if (RateLimiter::tooManyAttempts($throttleKey, 1)) {
+            $secondsLeft = RateLimiter::availableIn($throttleKey);
+            return response()->json([
+                'success' => false,
+                'message' => "Please wait {$secondsLeft} seconds before requesting another code."
+            ], 429);
+        }
+
+        // Record the request
+        RateLimiter::hit($throttleKey, 60);
+
+        $code = random_int(100000, 999999);
+
+        // Generate and save the new verification record
+        EmailVerification::create([
+            'user_id'       => $userId,
+            'email'         => $email,
+            'code'          => $code,
+            'attempt_count' => 0,
+            'is_used'       => false,
+            'purpose'       => 'email_verification',
+            'expires_at'    => now()->addMinutes(15),
+            'created_at'    => now(), // Manually set created_at
+        ]);
+
+        // Mail out the new code
+        Mail::to($email)->send(new SendVerificationCode($code));
+
+        return response()->json([
+            'success' => true,
+            'message' => 'A fresh verification code has been sent to your email.'
+        ]);
     }
 
     // Show Verification Form
@@ -109,7 +156,7 @@ class AuthController extends Controller
 
 
 
-    public function verifyEmail(Request $request)
+   public function verifyEmail(Request $request)
     {
         $request->validate([
             'code' => 'required|numeric|digits:6',
@@ -122,14 +169,15 @@ class AuthController extends Controller
             return redirect()->route('Auth.Teacher_Register')->withErrors(['error' => 'Session expired. Please register again.']);
         }
 
+        // Sorted by auto-increment ID to guarantee retrieval of the latest row
         $verification = EmailVerification::where('user_id', $userId)
             ->where('email', $email)
             ->where('is_used', false)
-            ->orderBy('created_at', 'desc')
+            ->orderBy('id', 'desc') 
             ->first();
 
         if (!$verification) {
-            return back()->withErrors(['code' => 'No verification code found. Please request a new one.']);
+            return back()->withErrors(['code' => 'No active verification code found. Please request a new one.']);
         }
 
         if (now()->greaterThan($verification->expires_at)) {
@@ -140,7 +188,8 @@ class AuthController extends Controller
             return back()->withErrors(['code' => 'Too many failed verification attempts. Please contact support or sign up again.']);
         }
 
-        if ($verification->code !== $request->code) {
+        // Safer integer comparison
+        if ((int)$verification->code !== (int)$request->code) {
             $verification->increment('attempt_count');
             return back()->withErrors(['code' => 'Invalid verification code.']);
         }
@@ -156,7 +205,7 @@ class AuthController extends Controller
                 'account_status' => 'active'
             ]);
 
-            // SECURE CHECK: Only create a TutorProfile if the user has the "Teacher" role
+            // Create TutorProfile if the user has the "Teacher" role
             $teacherRole = Role::where('role_type', 'Teacher')->first();
             if ($teacherRole && $user->role_id === $teacherRole->id) {
                 TutorProfile::create([
@@ -189,8 +238,7 @@ class AuthController extends Controller
         return view('Auth.Student_Register', compact('locations'));
     }
 
-    // 2. Handle Student Registration Form Submission
-    public function registerStudent(Request $request)
+  public function registerStudent(Request $request)
     {
         $request->validate([
             'first_name'    => 'required|string|max:255',
@@ -214,7 +262,6 @@ class AuthController extends Controller
         ]);
 
         try {
-            // Fetch the 'Student' role (assuming capitalized 'Student')
             $role = Role::where('role_type', 'Student')->firstOrFail();
 
             $user = User::create([
@@ -241,6 +288,7 @@ class AuthController extends Controller
                 'is_used'       => false,
                 'purpose'       => 'email_verification',
                 'expires_at'    => now()->addMinutes(15),
+                'created_at'    => now(), // Manually set created_at
             ]);
 
             Mail::to($user->email)->send(new SendVerificationCode($code));

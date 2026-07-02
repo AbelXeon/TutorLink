@@ -52,6 +52,11 @@ Route::get('/privacy-policy', function () {
     Route::post('/verify-email', [AuthController::class, 'verifyEmail'])
     ->name('verify.email');
 
+
+    Route::post('/verify-email/resend', 
+    [AuthController::class, 'resendVerificationCode'])
+    ->name('verify.email.resend');
+
     // Login Form
     Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
     Route::post('/login', [AuthController::class, 'login']);
