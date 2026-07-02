@@ -53,7 +53,7 @@
                 </select>
             </div>
 
-            <!-- NEW: Teaching Mode Selection -->
+            <!-- Teaching Mode Selection -->
             <div>
                 <label for="teaching_mode" class="block text-xs font-bold text-gray-700 uppercase">Teaching Method</label>
                 <select id="teaching_mode" name="teaching_mode" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md text-sm focus:ring-indigo-500">
@@ -108,7 +108,6 @@
                         <span>🎓 {{ $tutor->qualification }}</span>
                         <span>•</span>
                         <span>📍 {{ $tutor->user->location?->name }}, {{ $tutor->user->address }}</span>
-                        <!-- NEW: Displays the tutor's specific teaching mode on their card -->
                         <span>•</span>
                         <span class="capitalize text-indigo-700 bg-indigo-50/60 px-2 py-0.5 rounded border border-indigo-100/50 font-bold">
                             💻 {{ $tutor->teaching_mode }}
@@ -139,7 +138,6 @@
 
                     <div class="grid grid-cols-3 gap-2 text-center my-3 bg-gray-50 p-2 rounded-md">
                         <div>
-                            <!-- Outputs dynamic aggregated reviews from Database -->
                             <span class="block text-xs font-bold text-gray-900">{{ number_format($tutor->average_rating, 1) }} ★</span>
                             <span class="text-[10px] text-gray-500">({{ $tutor->reviews_count }}) revs</span>
                         </div>
@@ -153,16 +151,27 @@
                         </div>
                     </div>
 
-                    <!-- Call To Action Buttons (Updated to trigger modal instantly) -->
+                    <!-- Call To Action Buttons (Updated to intercept messaging if unbooked) -->
                     <div class="space-y-2">
                         <button type="button" 
                             onclick="openBookingModal('{{ $tutor->user->username }}', '{{ $tutor->user->first_name }} {{ $tutor->user->last_name }}', {{ json_encode($tutor->user->schedules) }})"
                             class="w-full block text-center py-2 px-3 text-xs font-bold rounded-md text-white bg-rose-700 hover:bg-rose-800 transition shadow-sm">
                             Book lesson
                         </button>
-                        <a href="{{ route('messages.show', $tutor->user->username) }}" class="w-full block text-center py-2 px-3 text-xs font-bold rounded-md text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 transition">
-                            Send message
-                        </a>
+
+                        @if(Auth::check() && in_array($tutor->user_id, $allowedTutorIds))
+                            <!-- Active Direct Chat Link -->
+                            <a href="{{ route('messages.show', $tutor->user->username) }}" class="w-full block text-center py-2 px-3 text-xs font-bold rounded-md text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 transition shadow-sm">
+                                Send message
+                            </a>
+                        @else
+                            <!-- Informative Front-End Booking Prompt Button -->
+                            <button type="button" 
+                                onclick="alert('Security Restriction: You must book a lesson with {{ $tutor->user->first_name }} and have it accepted before you can message them.')" 
+                                class="w-full block text-center py-2 px-3 text-xs font-bold rounded-md text-gray-400 bg-gray-50 border border-gray-200 cursor-not-allowed transition">
+                                Send message
+                            </button>
+                        @endif
                     </div>
                 </div>
 
@@ -179,26 +188,17 @@
 <!-- INTERACTIVE BOOKING MODAL (Blurred backdrop overlay) -->
 <div id="booking_modal" class="hidden fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-black bg-opacity-50 backdrop-blur-sm select-none transition duration-300">
     <div class="bg-white rounded-lg shadow-xl border border-gray-200 w-full max-w-xl p-8 relative">
-        
-        <!-- Close Button (X) -->
         <button type="button" id="close_booking_modal" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 focus:outline-none">
-            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
+            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
         </button>
 
         <div class="border-b border-gray-200 pb-4 mb-6">
             <h2 class="text-2xl font-extrabold text-gray-900">Book a Lesson</h2>
-            <p class="text-sm text-gray-500 mt-1">
-                Schedule a session with <strong id="modal_tutor_name" class="text-indigo-600"></strong>
-            </p>
+            <p class="text-sm text-gray-500 mt-1">Schedule a session with <strong id="modal_tutor_name" class="text-indigo-600"></strong></p>
         </div>
 
-        <!-- Submission Form (Action updated dynamically via JS) -->
         <form id="booking_form" action="" method="POST" class="space-y-6">
             @csrf
-
-            <!-- Hidden inputs for validation errors and actual selection submission -->
             <input type="hidden" id="session_date" name="session_date" required>
             <input type="hidden" id="start_time" name="start_time" required>
             <input type="hidden" id="end_time" name="end_time" required>
@@ -217,23 +217,17 @@
                             <button type="button" id="next_month" class="p-1.5 text-gray-600 hover:bg-gray-200 rounded-md text-xs font-bold">&rarr;</button>
                         </div>
                     </div>
-
                     <div class="grid grid-cols-7 gap-1 text-center text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
                         <span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span>
                     </div>
-
-                    <div id="calendar_days_grid" class="grid grid-cols-7 gap-1 text-center">
-                        <!-- Populated via JS -->
-                    </div>
+                    <div id="calendar_days_grid" class="grid grid-cols-7 gap-1 text-center font-bold"></div>
                 </div>
             </div>
 
             <!-- 2. Dynamic Available Slots -->
             <div id="slots_section" class="hidden">
                 <label class="block text-sm font-medium text-gray-700 mb-2">Available Time Slots</label>
-                <div id="slots_container" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <!-- Populated via JS -->
-                </div>
+                <div id="slots_container" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
             </div>
 
             <!-- 3. Booking Notes -->
@@ -243,18 +237,13 @@
             </div>
 
             <div class="pt-4 border-t border-gray-100 flex justify-end gap-3">
-                <button type="button" id="cancel_booking_modal" class="px-4 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition">
-                    Cancel
-                </button>
-                <button type="submit" id="submit_btn" disabled class="px-5 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-sm">
-                    Request Session Booking
-                </button>
+                <button type="button" id="cancel_booking_modal" class="px-4 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition">Cancel</button>
+                <button type="submit" id="submit_btn" disabled class="px-5 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-md hover:bg-indigo-700 disabled:opacity-50 transition shadow-sm">Request Session Booking</button>
             </div>
         </form>
     </div>
 </div>
 
-<!-- JAVASCRIPT: FILTER DROPDOWNS & MODAL CALENDAR HANDLERS -->
 <script>
     // --- SIDEBAR DROPDOWNS MAPS ---
     const addressOptions = {
@@ -346,7 +335,6 @@
     const endTimeInput = document.getElementById('end_time');
     const submitBtn = document.getElementById('submit_btn');
 
-    // Fields for preserving error redirects
     const oldTutorUsername = document.getElementById('old_tutor_username');
     const oldTutorName = document.getElementById('old_tutor_name');
     const oldTutorSchedules = document.getElementById('old_tutor_schedules');
@@ -356,68 +344,50 @@
     let activeTutorSchedules = [];
     let tutorActiveWeekdays = [];
 
-    // Triggered when clicking "Book Lesson" on a card
     function openBookingModal(username, fullName, schedulesJson) {
-        // Set dynamic form action securely
         bookingForm.action = "/tutors/" + username + "/book";
-
         modalTutorName.textContent = fullName;
         activeTutorSchedules = schedulesJson;
         tutorActiveWeekdays = [...new Set(activeTutorSchedules.map(s => s.day_of_week))];
 
-        // Store references in hidden fields for validation recovery
         oldTutorUsername.value = username;
         oldTutorName.value = fullName;
         oldTutorSchedules.value = JSON.stringify(schedulesJson);
 
-        // Reset variables
         sessionDateInput.value = '';
         startTimeInput.value = '';
         endTimeInput.value = '';
         slotsSection.classList.add('hidden');
         submitBtn.disabled = true;
 
-        currentDate = new Date(); // Reset calendar month to today
+        currentDate = new Date();
         renderCalendar();
-
         bookingModal.classList.remove('hidden');
     }
 
-    function closeBookingModal() {
-        bookingModal.classList.add('hidden');
-    }
+    function closeBookingModal() { bookingModal.classList.add('hidden'); }
 
     closeBookingBtn.addEventListener('click', closeBookingModal);
     cancelBookingBtn.addEventListener('click', closeBookingModal);
-
-    // Close on background click
-    bookingModal.addEventListener('click', (e) => {
-        if (e.target === bookingModal) {
-            closeBookingModal();
-        }
-    });
+    bookingModal.addEventListener('click', (e) => { if (e.target === bookingModal) closeBookingModal(); });
 
     function renderCalendar() {
         const year = currentDate.getFullYear();
         const month = currentDate.getMonth();
-
         const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
         calendarMonthYear.textContent = `${monthNames[month]} ${year}`;
-
         calendarDaysGrid.innerHTML = '';
 
         const firstDayIndex = new Date(year, month, 1).getDay();
         const totalDays = new Date(year, month + 1, 0).getDate();
 
         for (let i = 0; i < firstDayIndex; i++) {
-            const blank = document.createElement('span');
-            calendarDaysGrid.appendChild(blank);
+            calendarDaysGrid.appendChild(document.createElement('span'));
         }
 
         for (let dayNum = 1; dayNum <= totalDays; dayNum++) {
             const dateObj = new Date(year, month, dayNum);
             const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
-            
             const weekdaysMap = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
             const dayName = weekdaysMap[dateObj.getDay()];
 
@@ -431,17 +401,13 @@
             if (isFutureOrToday && isAvailableDay) {
                 button.classList.add('bg-indigo-50', 'text-indigo-600', 'hover:bg-indigo-100', 'cursor-pointer', 'border', 'border-indigo-200');
                 button.setAttribute('data-date', dateString);
-                button.setAttribute('data-day', dayName);
-
                 button.addEventListener('click', function() {
                     document.querySelectorAll('[data-date]').forEach(btn => {
                         btn.classList.remove('bg-indigo-600', 'text-white', 'hover:bg-indigo-700');
                         btn.classList.add('bg-indigo-50', 'text-indigo-600', 'hover:bg-indigo-100');
                     });
-
                     this.classList.remove('bg-indigo-50', 'text-indigo-600', 'hover:bg-indigo-100');
                     this.classList.add('bg-indigo-600', 'text-white', 'hover:bg-indigo-700');
-
                     sessionDateInput.value = dateString;
                     showSlots(dayName);
                 });
@@ -449,7 +415,6 @@
                 button.classList.add('text-gray-300', 'cursor-not-allowed');
                 button.disabled = true;
             }
-
             button.textContent = dayNum;
             calendarDaysGrid.appendChild(button);
         }
@@ -458,65 +423,40 @@
     function showSlots(dayName) {
         slotsContainer.innerHTML = '';
         submitBtn.disabled = true;
-        startTimeInput.value = '';
-        endTimeInput.value = '';
-
         const availableSlots = activeTutorSchedules.filter(sched => sched.day_of_week === dayName);
 
         if (availableSlots.length > 0) {
             slotsSection.classList.remove('hidden');
-
             availableSlots.forEach(slot => {
                 const button = document.createElement('button');
                 button.type = 'button';
-                
-                // Format display dynamically
                 const startClean = slot.start_time.substring(0, 5);
                 const endClean = slot.end_time.substring(0, 5);
-
                 button.className = "time-slot-btn py-2.5 px-4 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:border-indigo-500 hover:bg-indigo-50 transition text-center";
                 button.textContent = `${startClean} - ${endClean}`;
-
                 button.addEventListener('click', function() {
-                    document.querySelectorAll('.time-slot-btn').forEach(btn => {
-                        btn.classList.remove('border-indigo-600', 'bg-indigo-50', 'text-indigo-700');
-                    });
-
+                    document.querySelectorAll('.time-slot-btn').forEach(btn => btn.classList.remove('border-indigo-600', 'bg-indigo-50', 'text-indigo-700'));
                     this.classList.add('border-indigo-600', 'bg-indigo-50', 'text-indigo-700');
-
-                    // Save times
                     startTimeInput.value = slot.start_time.substring(0, 5);
                     endTimeInput.value = slot.end_time.substring(0, 5);
                     submitBtn.disabled = false;
                 });
-
                 slotsContainer.appendChild(button);
             });
         }
     }
 
-    prevMonthBtn.addEventListener('click', () => {
-        currentDate.setMonth(currentDate.getMonth() - 1);
-        renderCalendar();
-    });
+    prevMonthBtn.addEventListener('click', () => { currentDate.setMonth(currentDate.getMonth() - 1); renderCalendar(); });
+    nextMonthBtn.addEventListener('click', () => { currentDate.setMonth(currentDate.getMonth() + 1); renderCalendar(); });
 
-    nextMonthBtn.addEventListener('click', () => {
-        currentDate.setMonth(currentDate.getMonth() + 1);
-        renderCalendar();
-    });
-
-    // --- HEAL RECOVERY AFTER VALIDATION FAILURE REDIRECTS ---
     @if($errors->any() && old('session_date'))
         window.addEventListener('DOMContentLoaded', () => {
             const rawScheds = {!! old('old_tutor_schedules') !!};
-            openBookingModal("{{ old('old_tutor_username') }}", "{{ old('old_tutor_name') }}", rawSchedules);
-            
-            // Re-select old date
+            openBookingModal("{{ old('old_tutor_username') }}", "{{ old('old_tutor_name') }}", rawScheds);
             sessionDateInput.value = "{{ old('session_date') }}";
             const parts = sessionDateInput.value.split('-');
             currentDate = new Date(parts[0], parts[1] - 1, parts[2]);
             renderCalendar();
-            
             const activeBtn = document.querySelector(`[data-date="${sessionDateInput.value}"]`);
             if (activeBtn) activeBtn.click();
         });

@@ -47,7 +47,7 @@ class SearchController extends Controller
             });
         }
 
-        // NEW: Filter by Teaching Mode (online, in-person, hybrid)
+        // Filter by Teaching Mode (online, in-person, hybrid)
         if ($request->filled('teaching_mode')) {
             $query->where('teaching_mode', $request->teaching_mode);
         }
@@ -65,14 +65,24 @@ class SearchController extends Controller
             $tutor->reviews_count = $tutorReviews->count();
         }
 
+        // NEW: Fetch all tutor IDs this logged-in student has an accepted booking with
+        $allowedTutorIds = [];
+        if (Auth::check()) {
+            $allowedTutorIds = DB::table('bookings')
+                ->where('student_id', Auth::id())
+                ->where('status', 'accepted')
+                ->pluck('tutor_id')
+                ->toArray();
+        }
+
         // Load options for dropdowns
         $categories = Categories::with('subjects')->get();
         $locations = Location::all();
 
-        return view('Search.Tutor_view', compact('tutors', 'categories', 'locations'));
+        return view('Search.Tutor_view', compact('tutors', 'categories', 'locations', 'allowedTutorIds'));
     }
 
-    // 2. Show Tutor Profile with Secure Review Retrieval
+    // 2. Show Tutor Profile with Secure Review & Chat Authorization
     public function showTutorProfile($username)
     {
         $tutor = TutorProfile::whereHas('user', function ($q) use ($username) {
@@ -95,6 +105,8 @@ class SearchController extends Controller
 
         // Check if the current authenticated user has an accepted unreviewed booking with this tutor
         $unreviewedBooking = null;
+        $canMessage = false;
+
         if (Auth::check()) {
             $unreviewedBooking = DB::table('bookings')
                 ->where('tutor_id', $tutor->user_id)
@@ -106,9 +118,16 @@ class SearchController extends Controller
                       ->whereColumn('reviews.booking_id', 'bookings.id');
                 })
                 ->first();
+
+            // NEW: Verify if this user has permission to message the tutor
+            $canMessage = DB::table('bookings')
+                ->where('student_id', Auth::id())
+                ->where('tutor_id', $tutor->user_id)
+                ->where('status', 'accepted')
+                ->exists();
         }
 
-        return view('Teacher.Teacher_profile', compact('tutor', 'reviews', 'averageRating', 'unreviewedBooking'));
+        return view('Teacher.Teacher_profile', compact('tutor', 'reviews', 'averageRating', 'unreviewedBooking', 'canMessage'));
     }
 
     // 3. Secure Review Submission Controller Engine
