@@ -13,7 +13,6 @@ use App\Http\Controllers\TeacherController;
 use App\Http\Controllers\AdminController;
 
 
-
 Route::get('/', function () {
     return view('Landing');
 })->name('Landing');
@@ -130,7 +129,21 @@ Route::middleware('auth')->group(function () {
     Route::get('/api/conversations/{id}/updates', 
     [MessageController::class, 'getNewMessages'])->name('messages.updates');
 
-    
+ Route::post('/settings/send-code',
+  [SettingController::class, 'sendCode'])
+  ->name('settings.send_code');
+
+    Route::post('/settings/verify-code', 
+    [SettingController::class, 'verifyCode'])
+    ->name('settings.verify_code');
+
+    Route::post('/settings/update-username',
+     [SettingController::class, 'updateUsername'])
+     ->name('settings.update_username');
+
+    Route::post('/settings/update-password',
+    [SettingController::class, 'updatePassword'])
+    ->name('settings.update_password');
 
 
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');

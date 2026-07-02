@@ -6,6 +6,8 @@
     <title>TutorLink</title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Replace the CDN script with this -->
+@vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="bg-light">
 
@@ -62,6 +64,8 @@
 
     </div>
 </div>
+
+@include('Layouts.Footer')
 
 </body>
 </html>
