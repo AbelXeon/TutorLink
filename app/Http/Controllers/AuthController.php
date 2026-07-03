@@ -402,6 +402,119 @@ class AuthController extends Controller
         ]);
     }
 
+
+     public function sendResetCode(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email|exists:users,email',
+        ], [
+            'email.exists' => 'This email address is not registered in our system.'
+        ]);
+
+        // Secure Gatekeeper: Limit code requests to 1 per 60 seconds
+        $throttleKey = 'send-reset-code:' . $request->email;
+        if (RateLimiter::tooManyAttempts($throttleKey, 1)) {
+            $secondsLeft = RateLimiter::availableIn($throttleKey);
+            return response()->json([
+                'success' => false,
+                'message' => "Please wait {$secondsLeft} seconds before requesting another code."
+            ], 429);
+        }
+
+        RateLimiter::hit($throttleKey, 60);
+
+        $user = User::where('email', $request->email)->firstOrFail();
+        $code = random_int(100000, 999999);
+
+        // Store target email in the session for verification stages
+        session(['reset_password_email' => $request->email]);
+
+        EmailVerification::create([
+            'user_id'       => $user->id,
+            'email'         => $user->email,
+            'code'          => $code,
+            'attempt_count' => 0,
+            'is_used'       => false,
+            'purpose'       => 'pass_reset', // Keep under 15 characters
+            'expires_at'    => now()->addMinutes(15),
+            'created_at'    => now(),
+        ]);
+
+        Mail::to($user->email)->send(new SendVerificationCode($code));
+
+        return response()->json([
+            'success' => true,
+            'message' => 'A verification security code has been sent to your email.'
+        ]);
+    }
+
+    // STEP 2: Verify 6-Digit Password Reset Code
+    public function verifyResetCode(Request $request)
+    {
+        $request->validate([
+            'code' => 'required|numeric|digits:6',
+        ]);
+
+        $email = session('reset_password_email');
+        if (!$email) {
+            return response()->json(['success' => false, 'message' => 'Session expired. Please start over.'], 422);
+        }
+
+        $verification = EmailVerification::where('email', $email)
+            ->where('purpose', 'pass_reset')
+            ->where('is_used', false)
+            ->orderBy('id', 'desc')
+            ->first();
+
+        if (!$verification || now()->greaterThan($verification->expires_at)) {
+            return response()->json(['success' => false, 'message' => 'Code expired or invalid.'], 422);
+        }
+
+        if ((int)$verification->code !== (int)$request->code) {
+            $verification->increment('attempt_count');
+            return response()->json(['success' => false, 'message' => 'Incorrect verification code.'], 422);
+        }
+
+        $verification->update(['is_used' => true]);
+
+        // Securely authorize the session to update the password
+        session(['password_reset_unlocked' => true]);
+
+        return response()->json(['success' => true]);
+    }
+
+    // STEP 3: Apply the New Hashed Password
+    public function resetPassword(Request $request)
+    {
+        if (!session('password_reset_unlocked') || !session('reset_password_email')) {
+            return response()->json(['success' => false, 'message' => 'Security Restriction: Unauthorized access.'], 403);
+        }
+
+        $request->validate([
+            'password' => [
+                'required',
+                'string',
+                'confirmed',
+                Password::min(8)->max(16)->mixedCase()->numbers()->symbols()
+            ],
+        ]);
+
+        $email = session('reset_password_email');
+        $user = User::where('email', $email)->firstOrFail();
+
+        $user->update([
+            'password' => Hash::make($request->password)
+        ]);
+
+        // Clear temporary verification session markers
+        session()->forget(['reset_password_email', 'password_reset_unlocked']);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Your password has been successfully reset! You can now log in.'
+        ]);
+    }
+
     
     // 3. Process Logout Safely
     public function logout(Request $request)

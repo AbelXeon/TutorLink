@@ -52,6 +52,14 @@ Route::get('/privacy-policy', function () {
     Route::post('/verify-email', [AuthController::class, 'verifyEmail'])
     ->name('verify.email');
 
+    Route::post('/forgot-password/send-code',
+     [AuthController::class, 'sendResetCode'])->name('password.send_code');
+
+    Route::post('/forgot-password/verify-code',
+     [AuthController::class, 'verifyResetCode'])->name('password.verify_code');
+     
+    Route::post('/forgot-password/reset',
+     [AuthController::class, 'resetPassword'])->name('password.update_reset');
 
     Route::post('/verify-email/resend', 
     [AuthController::class, 'resendVerificationCode'])

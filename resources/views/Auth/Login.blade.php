@@ -187,7 +187,7 @@
             @endif
 
             <form class="mt-8 space-y-6" action="{{ route('login') }}" method="POST">
-                <!-- CSRF Protection Token: Crucial for security against Cross-Site Request Forgery -->
+                <!-- CSRF Protection Token -->
                 @csrf
 
                 <div class="space-y-4">
@@ -202,17 +202,13 @@
                         <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
                         <div class="relative mt-1">
                             <input id="password" name="password" type="password" required class="appearance-none swiss-input relative block w-full px-3 py-2 pr-10 placeholder-gray-400 text-gray-900 sm:text-sm">
-                            <!-- Eye toggle: show/hide password. Purely front-end, does not touch the submitted value. -->
+                            <!-- Eye toggle -->
                             <button type="button" id="togglePassword" aria-label="Show password" aria-pressed="false" class="eye-toggle absolute inset-y-0 right-0 flex items-center px-3">
                                 <svg id="eyeIconShow" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M1 12C1 12 5 5 12 5C19 5 23 12 23 12C23 12 19 19 12 19C5 19 1 12 1 12Z" stroke-linecap="round" stroke-linejoin="round"/>
-                                    <circle cx="12" cy="12" r="3"/>
+                                    <path d="M1 12C1 12 5 5 12 5C19 5 24 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                                 </svg>
-                                <svg id="eyeIconHide" class="w-5 h-5 hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M3 3L21 21" stroke-linecap="round"/>
-                                    <path d="M10.6 5.1C11.05 5.03 11.52 5 12 5C19 5 23 12 23 12C23 12 21.9 13.9 20 15.5" stroke-linecap="round" stroke-linejoin="round"/>
-                                    <path d="M6.6 6.6C3.4 8.5 1 12 1 12C1 12 5 19 12 19C13.9 19 15.5 18.5 16.9 17.7" stroke-linecap="round" stroke-linejoin="round"/>
-                                    <path d="M9.9 9.9A3 3 0 0 0 14.1 14.1" stroke-linecap="round" stroke-linejoin="round"/>
+                                <svg class="h-6 w-6 hidden" id="eye-closed-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-7 0-11-7-11-7a21.83 21.83 0 012.185-3.063m3.036-2.906A10.05 10.05 0 0112 5c7 0 11 7 11 7a21.88 21.88 0 01-2.91 4.218m-5.19-1.114a2.915 2.915 0 11-4.122-4.122m-1.42 1.42L3 3m18 18L3 3" />
                                 </svg>
                             </button>
                         </div>
@@ -229,9 +225,10 @@
                     </div>
 
                     <div class="text-sm">
-                        <a href="#" class="font-medium" style="color: var(--blue);">
+                        <!-- Clicking now triggers the in-page Swiss modal overlay -->
+                        <button type="button" onclick="openForgotModal()" class="font-medium focus:outline-none" style="color: var(--blue);">
                             Forgot your password?
-                        </a>
+                        </button>
                     </div>
                 </div>
 
@@ -243,7 +240,7 @@
                 </div>
             </form>
 
-            <!-- UPDATED SECTION: Structured Registration Selector Links -->
+            <!-- Registration Selector Links -->
             <div class="text-center mt-6 border-t border-gray-100 pt-6">
                 <p class="text-sm text-gray-600 mb-3">Don't have an account? Register as:</p>
                 <div class="flex justify-center gap-4">
@@ -274,10 +271,115 @@
 
     @include('Layouts.Footer')
 
+    <!-- FORGOT PASSWORD SWISS MODAL OVERLAY (Backdrop Updated to Blur/Blue styled overlay) -->
+    <div id="forgot_modal" class="hidden fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-md select-none transition duration-300">
+        <div class="bg-white rounded-none border border-gray-200 w-full max-w-md p-8 relative shadow-2xl">
+            
+            <!-- Close (X) Button -->
+            <button type="button" onclick="closeForgotModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 focus:outline-none">
+                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+
+            <!-- SCREEN 1: REQUEST CODE (Email Input) -->
+            <div id="forgot_screen_email" class="space-y-6">
+                <div class="border-b border-gray-150 pb-4 mb-4">
+                    <h2 class="text-2xl display-font text-gray-900">Reset Password</h2>
+                    <p class="text-xs text-gray-500 mt-1">Please enter your registered email address to request a security verification code.</p>
+                </div>
+
+                <div id="forgot_email_err" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded-none text-xs font-semibold"></div>
+
+                <form id="forgot_email_form" action="{{ route('password.send_code') }}" method="POST" class="space-y-4">
+                    @csrf
+                    <div>
+                        <label for="forgot_email" class="block text-xs font-bold text-gray-700 uppercase">Registered Email</label>
+                        <input id="forgot_email" name="email" type="email" required placeholder="email@example.com" class="mt-1.5 block w-full px-3 py-2 swiss-input text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                    </div>
+
+                    <div class="pt-4 border-t border-gray-100 flex justify-end gap-3">
+                        <button type="button" onclick="closeForgotModal()" class="px-4 py-2 text-xs font-semibold text-gray-700 bg-white border border-gray-200 hover:bg-gray-50 transition rounded-none">
+                            Cancel
+                        </button>
+                        <button type="submit" class="px-6 py-2 text-xs font-bold text-white btn-swiss-primary transition rounded-none">
+                            Request Code
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- SCREEN 2: VERIFY CODE (6-Digit Input) -->
+            <div id="forgot_screen_code" class="hidden space-y-6">
+                <div class="border-b border-gray-150 pb-4 mb-4">
+                    <h2 class="text-2xl display-font text-gray-900">Enter Code</h2>
+                    <p class="text-xs text-gray-500 mt-1">We've sent a 6-digit code to your email. Enter it below to unlock password modification.</p>
+                </div>
+
+                <div id="forgot_code_err" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded-none text-xs font-semibold"></div>
+
+                <form id="forgot_code_form" action="{{ route('password.verify_code') }}" method="POST" class="space-y-6">
+                    @csrf
+                    <div>
+                        <input id="forgot_code_val" name="code" type="text" pattern="[0-9]{6}" maxlength="6" required placeholder="123456" class="appearance-none swiss-input relative block w-full px-3 py-2 placeholder-gray-400 text-gray-900 text-center tracking-widest text-lg font-bold focus:outline-none">
+                    </div>
+
+                    <!-- NEW: Resend Code Button with 60-Second Cooldown Timer -->
+                    <div class="text-center pt-2">
+                        <button type="button" id="forgot_resend_btn" class="text-xs font-bold text-indigo-600 hover:text-indigo-800 disabled:text-gray-400 disabled:cursor-not-allowed transition duration-200">
+                            Resend Code
+                        </button>
+                        <span id="forgot_resend_timer" class="text-xs text-gray-500 ml-1 hidden"></span>
+                    </div>
+
+                    <div class="pt-4 border-t border-gray-100 flex justify-end gap-3">
+                        <button type="button" onclick="showForgotScreen('email')" class="px-4 py-2 text-xs font-semibold text-gray-700 bg-white border border-gray-200 hover:bg-gray-50 transition rounded-none">
+                            Back
+                        </button>
+                        <button type="submit" class="px-6 py-2 text-xs font-bold text-white btn-swiss-primary transition rounded-none">
+                            Verify Code
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- SCREEN 3: UPDATE PASSWORD (Unlocked) -->
+            <div id="forgot_screen_reset" class="hidden space-y-6">
+                <div class="border-b border-gray-150 pb-4 mb-4">
+                    <h2 class="text-2xl display-font text-gray-900">Set New Password</h2>
+                    <p class="text-xs text-gray-500 mt-1">Identity verified. You can now securely configure a new login password.</p>
+                </div>
+
+                <div id="forgot_reset_err" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded-none text-xs font-semibold"></div>
+
+                <form id="forgot_reset_form" action="{{ route('password.update_reset') }}" method="POST" class="space-y-4">
+                    @csrf
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="forgot_password_new" class="block text-xs font-bold text-gray-700 uppercase">New Password</label>
+                            <input id="forgot_password_new" name="password" type="password" required class="mt-1.5 block w-full px-3 py-2 swiss-input text-sm focus:outline-none">
+                        </div>
+                        <div>
+                            <label for="forgot_password_confirm" class="block text-xs font-bold text-gray-700 uppercase">Confirm Password</label>
+                            <input id="forgot_password_confirm" name="password_confirmation" type="password" required class="mt-1.5 block w-full px-3 py-2 swiss-input text-sm focus:outline-none">
+                        </div>
+                    </div>
+
+                    <div class="pt-4 border-t border-gray-100 flex justify-end">
+                        <button type="submit" class="py-2.5 px-6 rounded-none text-xs font-bold text-white btn-swiss-primary transition">
+                            Apply New Password
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT: PASSWORD VISIBILITY TOGGLE & SWISS FORGOT MODAL WIZARD -->
     <script>
-        // Password show/hide toggle — purely presentational, does not alter
-        // the form field's name/value, so nothing submitted to the backend changes.
         (function () {
+            // 1. Password Visibility Toggle
             const toggleBtn = document.getElementById('togglePassword');
             const passwordInput = document.getElementById('password');
             const iconShow = document.getElementById('eyeIconShow');
@@ -291,6 +393,166 @@
                 toggleBtn.setAttribute('aria-label', isHidden ? 'Hide password' : 'Show password');
                 toggleBtn.setAttribute('aria-pressed', isHidden ? 'true' : 'false');
             });
+
+            // 2. Forgot Password Swiss Modal Wizard Setup
+            const forgotModal = document.getElementById('forgot_modal');
+            const scrEmail = document.getElementById('forgot_screen_email');
+            const scrCode = document.getElementById('forgot_screen_code');
+            const scrReset = document.getElementById('forgot_screen_reset');
+
+            const formEmail = document.getElementById('forgot_email_form');
+            const formCode = document.getElementById('forgot_code_form');
+            const formReset = document.getElementById('forgot_reset_form');
+
+            const errEmail = document.getElementById('forgot_email_err');
+            const errCode = document.getElementById('forgot_code_err');
+            const errReset = document.getElementById('forgot_reset_err');
+
+            const resendBtn = document.getElementById('forgot_resend_btn');
+            const resendTimerText = document.getElementById('forgot_resend_timer');
+            let countdownInterval;
+
+            window.openForgotModal = function() {
+                forgotModal.classList.remove('hidden');
+                showForgotScreen('email');
+            }
+
+            window.closeForgotModal = function() {
+                forgotModal.classList.add('hidden');
+            }
+
+            forgotModal.addEventListener('click', (e) => {
+                if (e.target === forgotModal) {
+                    closeForgotModal();
+                }
+            });
+
+            window.showForgotScreen = function(screen) {
+                scrEmail.classList.add('hidden');
+                scrCode.classList.add('hidden');
+                scrReset.classList.add('hidden');
+
+                errEmail.classList.add('hidden');
+                errCode.classList.add('hidden');
+                errReset.classList.add('hidden');
+
+                if (screen === 'email') scrEmail.classList.remove('hidden');
+                if (screen === 'code') {
+                    scrCode.classList.remove('hidden');
+                    startResendTimer(60); // Auto-start 60-second lock when the code screen first opens
+                }
+                if (screen === 'reset') scrReset.classList.remove('hidden');
+            }
+
+            // Ticking Cooldown Timer logic
+            function startResendTimer(seconds) {
+                clearInterval(countdownInterval);
+                resendBtn.disabled = true;
+                resendTimerText.classList.remove('hidden');
+                resendTimerText.textContent = `(Wait ${seconds}s)`;
+
+                countdownInterval = setInterval(() => {
+                    seconds--;
+                    resendTimerText.textContent = `(Wait ${seconds}s)`;
+
+                    if (seconds <= 0) {
+                        clearInterval(countdownInterval);
+                        resendBtn.disabled = false;
+                        resendTimerText.classList.add('hidden');
+                    }
+                }, 1000);
+            }
+
+            // AJAX Resend Code Trigger
+            resendBtn.addEventListener('click', function() {
+                errCode.classList.add('hidden');
+                
+                // Emulate submission of the email form to trigger resending
+                const formData = new FormData(formEmail);
+
+                fetch(formEmail.getAttribute('action'), {
+                    method: 'POST',
+                    body: formData,
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                })
+                .then(res => res.json().then(data => ({ status: res.status, body: data })))
+                .then(res => {
+                    if (res.status === 200) {
+                        startResendTimer(60); // Restart 60s cooldown timer
+                    } else {
+                        errCode.textContent = res.body.message || "Failed to resend code.";
+                        errCode.classList.remove('hidden');
+                    }
+                })
+                .catch(err => console.error(err));
+            });
+
+            // Screen 1: Submit Email
+            formEmail.addEventListener('submit', function(e) {
+                e.preventDefault();
+                errEmail.classList.add('hidden');
+
+                fetch(this.getAttribute('action'), {
+                    method: 'POST',
+                    body: new FormData(this),
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                })
+                .then(res => res.json().then(data => ({ status: res.status, body: data })))
+                .then(res => {
+                    if (res.status === 200) {
+                        showForgotScreen('code');
+                    } else {
+                        errEmail.textContent = res.body.message || "Request failed. Please verify your email.";
+                        errEmail.classList.remove('hidden');
+                    }
+                })
+                .catch(err => console.error(err));
+            });
+
+            // Screen 2: Submit Verification Code
+            formCode.addEventListener('submit', function(e) {
+                e.preventDefault();
+                errCode.classList.add('hidden');
+
+                fetch(this.getAttribute('action'), {
+                    method: 'POST',
+                    body: new FormData(this),
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                })
+                .then(res => res.json().then(data => ({ status: res.status, body: data })))
+                .then(res => {
+                    if (res.status === 200) {
+                        showForgotScreen('reset');
+                    } else {
+                        errCode.textContent = res.body.message || "Invalid or expired verification code.";
+                        errCode.classList.remove('hidden');
+                    }
+                })
+                .catch(err => console.error(err));
+            });
+
+            // Screen 3: Submit New Password
+            formReset.addEventListener('submit', function(e) {
+                e.preventDefault();
+                errReset.classList.add('hidden');
+
+                fetch(this.getAttribute('action'), {
+                    method: 'POST',
+                    body: new FormData(this),
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                })
+                .then(res => res.json().then(data => ({ status: res.status, body: data })))
+                .then(res => {
+                    if (res.status === 200) {
+                        window.location.reload();
+                    } else {
+                        errReset.textContent = res.body.message || "Failed to update password.";
+                        errReset.classList.remove('hidden');
+                    }
+                })
+                .catch(err => console.error(err));
+            });
+
         })();
     </script>
 
