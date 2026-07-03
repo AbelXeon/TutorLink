@@ -3,13 +3,169 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Set up your TutorLink teaching profile. Add your biography, qualification credentials, pricing, and availability schedules.">
     <title>Setup Tutor Profile</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+    <style>
+        :root{
+            --ink:#0a0a0a;
+            --paper:#f5f4f1;
+            --white:#ffffff;
+            --blue:#1350e0;
+            --blue-dark:#0d3aa8;
+            --line: rgba(10,10,10,0.14);
+        }
+        * { box-sizing: border-box; }
+        html { overflow-x: hidden; }
+        body { font-family: 'Inter', sans-serif; overflow-x: hidden; }
+        .display-font {
+            font-family: 'Bebas Neue', sans-serif;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+        }
+        .swiss-panel { border-radius: 0; border: 1px solid var(--line); box-shadow: none; }
+
+        .swiss-input, .swiss-select, .swiss-textarea {
+            border-radius: 0;
+            border: 1px solid var(--line);
+            transition: border-color .15s ease;
+        }
+        .swiss-input:focus, .swiss-select:focus, .swiss-textarea:focus {
+            outline: none;
+            border-color: var(--ink);
+            box-shadow: none;
+        }
+        .swiss-select {
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background-color: var(--white);
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%230a0a0a' stroke-width='2'><path d='M6 9l6 6 6-6' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+            background-repeat: no-repeat;
+            background-position: right 0.75rem center;
+            background-size: 13px;
+            padding-right: 2.25rem;
+            cursor: pointer;
+        }
+        .field-icon {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #9a9a9a;
+            pointer-events: none;
+        }
+        .btn-swiss-primary {
+            border-radius: 0;
+            background-color: var(--ink);
+            border: 1px solid var(--ink);
+            transition: background-color .15s ease, border-color .15s ease;
+        }
+        .btn-swiss-primary:hover, .btn-swiss-primary:focus {
+            background-color: var(--blue);
+            border-color: var(--blue);
+        }
+        .btn-swiss-outline {
+            border-radius: 0;
+            border: 1px solid var(--ink);
+            color: var(--ink);
+            background: var(--white);
+            transition: background-color .15s ease, color .15s ease;
+        }
+        .btn-swiss-outline:hover { background: var(--ink); color: var(--white); }
+
+        .section-label {
+            font-size: 0.72rem;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: #8a8a8a;
+        }
+
+        /* Chip-style checkboxes for Grade Levels & Subjects.
+           The actual <input type=checkbox> keeps its name/id/checked state exactly
+           as before — it's just visually hidden (sr-only) with a styled <label> as
+           the clickable chip, connected via the native for/id relationship. */
+        .chip-check {
+            position: absolute;
+            width: 1px; height: 1px;
+            padding: 0; margin: -1px;
+            overflow: hidden;
+            clip: rect(0,0,0,0);
+            white-space: nowrap;
+            border: 0;
+        }
+        .chip-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            border: 1px solid var(--line);
+            padding: 0.5rem 0.9rem;
+            font-size: 0.85rem;
+            cursor: pointer;
+            user-select: none;
+            transition: background-color .15s ease, color .15s ease, border-color .15s ease;
+            background: var(--white);
+        }
+        .chip-check:checked + .chip-label {
+            background-color: var(--ink);
+            color: var(--white);
+            border-color: var(--ink);
+        }
+        .chip-check.chip-blue:checked + .chip-label {
+            background-color: var(--blue);
+            border-color: var(--blue);
+        }
+        .chip-check:focus-visible + .chip-label {
+            outline: 2px solid var(--blue);
+            outline-offset: 2px;
+        }
+
+        /* Avatar / profile image uploader */
+        .avatar-ring {
+            width: 7rem; height: 7rem;
+            border-radius: 50%;
+            border: 1.5px dashed var(--line);
+            background: var(--paper);
+            display: flex; align-items: center; justify-content: center;
+            overflow: hidden;
+        }
+        .avatar-edit-btn {
+            border-radius: 50%;
+            background: var(--ink);
+            color: var(--white);
+            width: 2.1rem; height: 2.1rem;
+            display: flex; align-items: center; justify-content: center;
+            border: 2px solid var(--white);
+            cursor: pointer;
+            transition: background-color .15s ease;
+        }
+        .avatar-edit-btn:hover { background-color: var(--blue); }
+        .sr-only-file {
+            position: absolute; width: 1px; height: 1px;
+            padding: 0; margin: -1px; overflow: hidden;
+            clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+        }
+
+        @media (max-width: 640px) {
+            .setup-card { padding: 1.75rem 1.25rem !important; }
+        }
+    </style>
 </head>
-<body class="bg-gray-100 min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-    <div class="max-w-xl w-full space-y-8 bg-white p-8 rounded-lg shadow-md">
+<!-- flex-col + flex-grow <main>: fixes the same alignment bug as the other pages —
+     without flex-col, the card and the footer sit side-by-side as flex-row items
+     instead of stacking. -->
+<body class="min-h-screen flex flex-col justify-between" style="background: var(--paper);">
+<main class="flex-grow flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div class="setup-card swiss-panel max-w-2xl w-full space-y-8 bg-white p-8">
         <div>
-            <h2 class="text-center text-3xl font-extrabold text-gray-900">
+            <p class="section-label text-center mb-1">Tutor Onboarding</p>
+            <h2 class="text-center text-3xl display-font text-gray-900">
                 Complete Your Tutor Profile
             </h2>
             <p class="mt-2 text-center text-sm text-gray-600">
@@ -18,7 +174,7 @@
         </div>
 
         @if ($errors->any())
-            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
+            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 relative">
                 <strong class="font-bold">Whoops!</strong>
                 <ul class="mt-2 list-disc list-inside text-sm">
                     @foreach ($errors->all() as $error)
@@ -28,70 +184,112 @@
             </div>
         @endif
 
-        <form class="mt-8 space-y-6" action="{{ route('tutor.profile.store') }}" method="POST" enctype="multipart/form-data">
+        <form class="mt-8 space-y-8" action="{{ route('tutor.profile.store') }}" method="POST" enctype="multipart/form-data">
             @csrf
-            
-            <div class="space-y-4">
-                <!-- Profile Image Input -->
-                <div>
-                    <label for="profile_image" class="block text-sm font-medium text-gray-700">Profile Image (Max 2MB, JPEG/PNG only)</label>
-                    <input id="profile_image" name="profile_image" type="file" accept=".jpg,.jpeg,.png" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" />
+
+            <div class="space-y-8">
+
+                <!-- Profile Image: avatar-style uploader with live preview -->
+                <div class="flex flex-col items-center gap-3">
+                    <div class="relative">
+                        <div id="avatarRing" class="avatar-ring">
+                            <svg id="avatarPlaceholder" class="w-10 h-10" viewBox="0 0 24 24" fill="none" stroke="#b0b0b0" stroke-width="1.6">
+                                <circle cx="12" cy="8" r="3.5"/>
+                                <path d="M4.5 20C4.5 16 7.8 13.5 12 13.5C16.2 13.5 19.5 16 19.5 20" stroke-linecap="round"/>
+                            </svg>
+                            <img id="avatarPreviewImg" class="hidden w-full h-full object-cover" alt="Profile preview">
+                        </div>
+                        <label for="profile_image" class="avatar-edit-btn absolute bottom-0 right-0" aria-label="Upload profile photo">
+                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M4 8h3l2-2h6l2 2h3v11H4V8Z" stroke-linejoin="round"/>
+                                <circle cx="12" cy="13.5" r="3.5"/>
+                            </svg>
+                        </label>
+                    </div>
+                    <input id="profile_image" name="profile_image" type="file" accept=".jpg,.jpeg,.png" class="sr-only-file" />
+                    <p id="avatarFileName" class="text-xs text-gray-500">JPEG or PNG, max 2MB.</p>
                 </div>
 
                 <!-- Qualification -->
                 <div>
                     <label for="qualification" class="block text-sm font-medium text-gray-700">Highest Qualification</label>
-                    <select id="qualification" name="qualification" required class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                        <option value="">Select Qualification</option>
-                        <option value="High School Diploma" {{ old('qualification', $tutorProfile->qualification) == 'High School Diploma' ? 'selected' : '' }}>High School Diploma</option>
-                        <option value="Bachelor Degree" {{ old('qualification', $tutorProfile->qualification) == 'Bachelor Degree' ? 'selected' : '' }}>Bachelor's Degree</option>
-                        <option value="Master Degree" {{ old('qualification', $tutorProfile->qualification) == 'Master Degree' ? 'selected' : '' }}>Master's Degree</option>
-                        <option value="PhD" {{ old('qualification', $tutorProfile->qualification) == 'PhD' ? 'selected' : '' }}>PhD / Doctorate</option>
-                        <option value="Other Certification" {{ old('qualification', $tutorProfile->qualification) == 'Other Certification' ? 'selected' : '' }}>Other Professional Teaching Certification</option>
-                    </select>
+                    <div class="relative mt-1">
+                        <svg class="field-icon w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 3L2 8L12 13L22 8L12 3Z" stroke-linejoin="round"/>
+                            <path d="M6 10.5V16C6 16 8.5 19 12 19C15.5 19 18 16 18 16V10.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <select id="qualification" name="qualification" required class="swiss-select block w-full pl-10 pr-8 py-2 sm:text-sm">
+                            <option value="">Select Qualification</option>
+                            <option value="High School Diploma" {{ old('qualification', $tutorProfile->qualification) == 'High School Diploma' ? 'selected' : '' }}>High School Diploma</option>
+                            <option value="Bachelor Degree" {{ old('qualification', $tutorProfile->qualification) == 'Bachelor Degree' ? 'selected' : '' }}>Bachelor's Degree</option>
+                            <option value="Master Degree" {{ old('qualification', $tutorProfile->qualification) == 'Master Degree' ? 'selected' : '' }}>Master's Degree</option>
+                            <option value="PhD" {{ old('qualification', $tutorProfile->qualification) == 'PhD' ? 'selected' : '' }}>PhD / Doctorate</option>
+                            <option value="Other Certification" {{ old('qualification', $tutorProfile->qualification) == 'Other Certification' ? 'selected' : '' }}>Other Professional Teaching Certification</option>
+                        </select>
+                    </div>
                 </div>
 
                 <!-- Experience Years & Price -->
-                <div class="grid grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label for="experience_years" class="block text-sm font-medium text-gray-700">Years of Experience</label>
-                        <input id="experience_years" name="experience_years" type="number" min="0" max="50" required value="{{ old('experience_years', $tutorProfile->experience_years) }}" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        <div class="relative mt-1">
+                            <svg class="field-icon w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="9"/>
+                                <path d="M12 7V12L15.5 14" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                            <input id="experience_years" name="experience_years" type="number" min="0" max="50" required value="{{ old('experience_years', $tutorProfile->experience_years) }}" class="swiss-input block w-full pl-10 pr-3 py-2 sm:text-sm">
+                        </div>
                     </div>
                     <div>
                         <label for="price_per_hour" class="block text-sm font-medium text-gray-700">Price Per Hour (ETB)</label>
-                        <input id="price_per_hour" name="price_per_hour" type="number" step="0.01" min="0" required value="{{ old('price_per_hour', $tutorProfile->price_per_hour) }}" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        <div class="relative mt-1">
+                            <span class="field-icon text-xs font-semibold" style="left:0.7rem;">ETB</span>
+                            <input id="price_per_hour" name="price_per_hour" type="number" step="0.01" min="0" required value="{{ old('price_per_hour', $tutorProfile->price_per_hour) }}" class="swiss-input block w-full pl-12 pr-3 py-2 sm:text-sm">
+                        </div>
                     </div>
                 </div>
 
                 <!-- Teaching Mode & Max Students -->
-                <div class="grid grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label for="teaching_mode" class="block text-sm font-medium text-gray-700">Teaching Mode</label>
-                        <select id="teaching_mode" name="teaching_mode" required class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                            <option value="online" {{ old('teaching_mode', $tutorProfile->teaching_mode) == 'online' ? 'selected' : '' }}>Online</option>
-                            <option value="in-person" {{ old('teaching_mode', $tutorProfile->teaching_mode) == 'in-person' ? 'selected' : '' }}>In-Person</option>
-                            <option value="hybrid" {{ old('teaching_mode', $tutorProfile->teaching_mode) == 'hybrid' ? 'selected' : '' }}>Hybrid</option>
-                        </select>
+                        <div class="relative mt-1">
+                            <svg class="field-icon w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="4" width="18" height="12" rx="0.5"/>
+                                <path d="M3 13H21" stroke-linecap="round"/>
+                                <path d="M7 20H17" stroke-linecap="round"/>
+                            </svg>
+                            <select id="teaching_mode" name="teaching_mode" required class="swiss-select block w-full pl-10 pr-8 py-2 sm:text-sm">
+                                <option value="online" {{ old('teaching_mode', $tutorProfile->teaching_mode) == 'online' ? 'selected' : '' }}>Online</option>
+                                <option value="in-person" {{ old('teaching_mode', $tutorProfile->teaching_mode) == 'in-person' ? 'selected' : '' }}>In-Person</option>
+                                <option value="hybrid" {{ old('teaching_mode', $tutorProfile->teaching_mode) == 'hybrid' ? 'selected' : '' }}>Hybrid</option>
+                            </select>
+                        </div>
                     </div>
                     <div>
                         <label for="max_students" class="block text-sm font-medium text-gray-700">Max Students / Session</label>
-                        <input id="max_students" name="max_students" type="number" min="1" max="100" required value="{{ old('max_students', $tutorProfile->max_students) }}" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        <div class="relative mt-1">
+                            <svg class="field-icon w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="9" cy="8" r="3"/>
+                                <path d="M2.5 19C2.5 15.5 5.4 13.5 9 13.5C12.6 13.5 15.5 15.5 15.5 19" stroke-linecap="round"/>
+                                <circle cx="17" cy="8.5" r="2.3"/>
+                                <path d="M15 13.7C18 13.9 20 15.7 20.5 18.6" stroke-linecap="round"/>
+                            </svg>
+                            <input id="max_students" name="max_students" type="number" min="1" max="100" required value="{{ old('max_students', $tutorProfile->max_students) }}" class="swiss-input block w-full pl-10 pr-3 py-2 sm:text-sm">
+                        </div>
                     </div>
                 </div>
 
                 <!-- Grade Levels -->
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Grade Levels You Can Teach</label>
-                    <div class="space-y-2 bg-gray-50 p-4 rounded-md border border-gray-200">
+                    <div class="flex flex-wrap gap-2">
                         @foreach($gradeLevels as $level)
-                            <div class="flex items-center">
-                                <input id="grade_level_{{ $level->id }}" name="grade_levels[]" type="checkbox" value="{{ $level->id }}" 
-                                    {{ in_array($level->id, old('grade_levels', $tutorProfile->gradeLevels->pluck('id')->toArray())) ? 'checked' : '' }}
-                                    class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
-                                <label for="grade_level_{{ $level->id }}" class="ml-2 block text-sm text-gray-900">
-                                    {{ $level->name }}
-                                </label>
-                            </div>
+                            <input id="grade_level_{{ $level->id }}" name="grade_levels[]" type="checkbox" value="{{ $level->id }}"
+                                {{ in_array($level->id, old('grade_levels', $tutorProfile->gradeLevels->pluck('id')->toArray())) ? 'checked' : '' }}
+                                class="chip-check">
+                            <label for="grade_level_{{ $level->id }}" class="chip-label">{{ $level->name }}</label>
                         @endforeach
                     </div>
                 </div>
@@ -99,30 +297,33 @@
                 <!-- Category Selection (Dropdown Selector) -->
                 <div>
                     <label for="category_id" class="block text-sm font-medium text-gray-700">Teaching Category (Select One)</label>
-                    <select id="category_id" name="category_id" required class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                        <option value="">Select Category</option>
-                        @foreach($categories as $category)
-                            <option value="{{ $category->id }}" 
-                                {{ ($tutorProfile->subjects->first() && $tutorProfile->subjects->first()->category_id == $category->id) ? 'selected' : '' }}>
-                                {{ $category->name }}
-                            </option>
-                        @endforeach
-                    </select>
+                    <div class="relative mt-1">
+                        <svg class="field-icon w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M3 6C3 5 4 4 5 4H9L11 6H19C20 6 21 7 21 8V17C21 18 20 19 19 19H5C4 19 3 18 3 17V6Z" stroke-linejoin="round"/>
+                        </svg>
+                        <select id="category_id" name="category_id" required class="swiss-select block w-full pl-10 pr-8 py-2 sm:text-sm">
+                            <option value="">Select Category</option>
+                            @foreach($categories as $category)
+                                <option value="{{ $category->id }}"
+                                    {{ ($tutorProfile->subjects->first() && $tutorProfile->subjects->first()->category_id == $category->id) ? 'selected' : '' }}>
+                                    {{ $category->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
                 </div>
 
                 <!-- Subjects Dynamic Checkbox Selection (Hidden until category is selected) -->
                 <div id="subjects_section" class="hidden">
                     <label class="block text-sm font-medium text-gray-700 mb-2">Select Subjects (Choose up to 3)</label>
-                    <div id="checkbox_container" class="grid grid-cols-1 md:grid-cols-2 gap-2 bg-gray-50 p-4 rounded-md border border-gray-200">
+                    <div id="checkbox_container" class="flex flex-wrap gap-2">
                         @foreach($categories as $category)
                             @foreach($category->subjects as $subject)
-                                <div class="flex items-center subject-checkbox-wrapper" data-category-id="{{ $category->id }}">
-                                    <input id="subject_{{ $subject->id }}" name="subjects[]" type="checkbox" value="{{ $subject->id }}" 
+                                <div class="subject-checkbox-wrapper" data-category-id="{{ $category->id }}">
+                                    <input id="subject_{{ $subject->id }}" name="subjects[]" type="checkbox" value="{{ $subject->id }}"
                                         {{ in_array($subject->id, old('subjects', $tutorProfile->subjects->pluck('id')->toArray())) ? 'checked' : '' }}
-                                        class="h-4 w-4 text-indigo-600 border-gray-300 rounded subject-checkbox">
-                                    <label for="subject_{{ $subject->id }}" class="ml-2 block text-sm text-gray-900">
-                                        {{ $subject->name }}
-                                    </label>
+                                        class="chip-check chip-blue subject-checkbox">
+                                    <label for="subject_{{ $subject->id }}" class="chip-label">{{ $subject->name }}</label>
                                 </div>
                             @endforeach
                         @endforeach
@@ -130,15 +331,15 @@
                     <p id="warning_text" class="mt-2 text-xs text-red-600 hidden">You can select a maximum of 3 subjects.</p>
                 </div>
 
-                  <!-- DYNAMIC WEEKLY SCHEDULE BUILDER -->
+                <!-- DYNAMIC WEEKLY SCHEDULE BUILDER -->
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Weekly Availability Schedule</label>
-                    <div id="schedule_wrapper" class="space-y-3 bg-gray-50 p-4 rounded-md border border-gray-200">
-                        
+                    <div id="schedule_wrapper" class="space-y-3 p-4" style="background: var(--paper); border: 1px solid var(--line);">
+
                         <!-- Existing Schedules (populated if editing) -->
                         @foreach($schedules as $index => $sched)
-                            <div class="flex flex-wrap items-center gap-3 schedule-row pb-3 border-b border-gray-200 last:border-b-0 last:pb-0">
-                                <select name="schedules[{{ $index }}][day]" required class="block py-1.5 px-3 border border-gray-300 bg-white rounded-md text-sm focus:outline-none focus:ring-indigo-500">
+                            <div class="flex flex-wrap items-center gap-3 schedule-row pb-3 border-b last:border-b-0 last:pb-0" style="border-color: var(--line);">
+                                <select name="schedules[{{ $index }}][day]" required class="swiss-select block py-1.5 pl-3 pr-8 text-sm">
                                     <option value="Monday" {{ $sched->day_of_week == 'Monday' ? 'selected' : '' }}>Monday</option>
                                     <option value="Tuesday" {{ $sched->day_of_week == 'Tuesday' ? 'selected' : '' }}>Tuesday</option>
                                     <option value="Wednesday" {{ $sched->day_of_week == 'Wednesday' ? 'selected' : '' }}>Wednesday</option>
@@ -149,17 +350,17 @@
                                 </select>
 
                                 <span class="text-xs text-gray-500">Start:</span>
-                                <input type="time" name="schedules[{{ $index }}][start]" required value="{{ \Carbon\Carbon::parse($sched->start_time)->format('H:i') }}" class="py-1 px-2 border border-gray-300 rounded-md text-sm">
-                                
+                                <input type="time" name="schedules[{{ $index }}][start]" required value="{{ \Carbon\Carbon::parse($sched->start_time)->format('H:i') }}" class="swiss-input py-1 px-2 text-sm">
+
                                 <span class="text-xs text-gray-500">End:</span>
-                                <input type="time" name="schedules[{{ $index }}][end]" required value="{{ \Carbon\Carbon::parse($sched->end_time)->format('H:i') }}" class="py-1 px-2 border border-gray-300 rounded-md text-sm">
+                                <input type="time" name="schedules[{{ $index }}][end]" required value="{{ \Carbon\Carbon::parse($sched->end_time)->format('H:i') }}" class="swiss-input py-1 px-2 text-sm">
 
                                 <button type="button" class="remove-schedule-btn text-xs text-red-600 hover:text-red-800 font-semibold ml-auto">Remove</button>
                             </div>
                         @endforeach
 
                     </div>
-                    <button type="button" id="add_schedule_btn" class="mt-3 inline-flex items-center px-3 py-1.5 border border-indigo-600 text-xs font-semibold rounded-md text-indigo-600 bg-white hover:bg-indigo-50 transition">
+                    <button type="button" id="add_schedule_btn" class="btn-swiss-outline mt-3 inline-flex items-center px-3 py-1.5 text-xs font-semibold">
                         + Add Available Day/Time
                     </button>
                 </div>
@@ -167,18 +368,21 @@
                 <!-- Professional Bio -->
                 <div>
                     <label for="bio" class="block text-sm font-medium text-gray-700">About Me / Bio</label>
-                    <textarea id="bio" name="bio" rows="4" required placeholder="Describe your teaching philosophy..." class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">{{ old('bio', $tutorProfile->bio) }}</textarea>
+                    <textarea id="bio" name="bio" rows="4" required placeholder="Describe your teaching philosophy..." class="swiss-textarea mt-1 block w-full px-3 py-2 sm:text-sm">{{ old('bio', $tutorProfile->bio) }}</textarea>
                     <p class="mt-1 text-xs text-gray-500">Minimum 20 characters.</p>
                 </div>
             </div>
 
             <div>
-                <button type="submit" class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                    Save Profile & Publish
+                <button type="submit" class="btn-swiss-primary group relative w-full flex justify-center py-2.5 px-4 text-sm font-medium text-white">
+                    Save Profile &amp; Publish
                 </button>
             </div>
         </form>
     </div>
+</main>
+        @include('Layouts.Footer')
+
 
     <!-- JAVASCRIPT FOR CATEGORY MATCHING AND 3-SUBJECT LIMITATION -->
     <script>
@@ -238,10 +442,11 @@
 
         addScheduleBtn.addEventListener('click', function() {
             const row = document.createElement('div');
-            row.className = "flex flex-wrap items-center gap-3 schedule-row pb-3 border-b border-gray-200 last:border-b-0 last:pb-0";
-            
+            row.className = "flex flex-wrap items-center gap-3 schedule-row pb-3 border-b last:border-b-0 last:pb-0";
+            row.style.borderColor = "rgba(10,10,10,0.14)";
+
             row.innerHTML = `
-                <select name="schedules[${rowIndex}][day]" required class="block py-1.5 px-3 border border-gray-300 bg-white rounded-md text-sm focus:outline-none focus:ring-indigo-500">
+                <select name="schedules[${rowIndex}][day]" required class="swiss-select block py-1.5 pl-3 pr-8 text-sm">
                     <option value="Monday">Monday</option>
                     <option value="Tuesday">Tuesday</option>
                     <option value="Wednesday">Wednesday</option>
@@ -252,10 +457,10 @@
                 </select>
 
                 <span class="text-xs text-gray-500">Start:</span>
-                <input type="time" name="schedules[${rowIndex}][start]" required class="py-1 px-2 border border-gray-300 rounded-md text-sm">
+                <input type="time" name="schedules[${rowIndex}][start]" required class="swiss-input py-1 px-2 text-sm">
                 
                 <span class="text-xs text-gray-500">End:</span>
-                <input type="time" name="schedules[${rowIndex}][end]" required class="py-1 px-2 border border-gray-300 rounded-md text-sm">
+                <input type="time" name="schedules[${rowIndex}][end]" required class="swiss-input py-1 px-2 text-sm">
 
                 <button type="button" class="remove-schedule-btn text-xs text-red-600 hover:text-red-800 font-semibold ml-auto">Remove</button>
             `;
@@ -282,6 +487,31 @@
             }
         }
 
+    </script>
+
+    <!-- Avatar live preview: purely front-end, the file input's name/id/accept
+         attributes are unchanged, so the submitted file field is unaffected. -->
+    <script>
+        (function () {
+            const input = document.getElementById('profile_image');
+            const placeholder = document.getElementById('avatarPlaceholder');
+            const previewImg = document.getElementById('avatarPreviewImg');
+            const fileName = document.getElementById('avatarFileName');
+
+            input.addEventListener('change', function () {
+                const file = input.files && input.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    previewImg.src = e.target.result;
+                    previewImg.classList.remove('hidden');
+                    placeholder.classList.add('hidden');
+                };
+                reader.readAsDataURL(file);
+                fileName.textContent = file.name;
+            });
+        })();
     </script>
 </body>
 </html>

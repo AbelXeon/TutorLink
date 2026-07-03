@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Connect with verified academic and programming tutors in Ethiopia. Browse tutor profiles, view schedules, read reviews, and book lessons easily on TutorLink.">
     <title>TutorLink - Find and Book Verified Tutors in Ethiopia</title>
 
     <!-- Bootstrap CDN for Landing Page layouts (grid only, visuals overridden below) -->

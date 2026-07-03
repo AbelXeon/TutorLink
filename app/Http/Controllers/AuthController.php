@@ -374,22 +374,21 @@ class AuthController extends Controller
                         return redirect()->route('tutor.profile.edit')->with('success', 'Please complete your tutor profile details.');
                     }
 
-                    return redirect()->intended(route('tutor.dashboard'))->with('success', 'Welcome back!');
+                   return redirect()->route('tutor.dashboard')->with('success', 'Welcome back!');
                 }
 
                 // 2. If Student (Redirects directly to dashboard, no profile making needed)
                 if ($roleType === 'student') {
-                    return redirect()->intended(route('student.dashboard'))->with('success', 'Welcome back!');
+                    return redirect()->route('student.dashboard')->with('success', 'Welcome back!');
                 }
                 
 
                   if (in_array($roleType, ['admin', 'super_admin'])) {
-                    return redirect()->intended(route('admin.dashboard'))->with('success', 'Welcome back to the Admin Dashboard!');
+                   return redirect()->route('admin.dashboard')->with('success', 'Welcome back to the Admin Dashboard!');
                 }
             }
 
-            // Fallback redirect if no specific role matched
-            return redirect()->intended(route('Landing'))->with('success', 'Welcome back!');
+           return redirect()->route('Landing')->with('success', 'Welcome back!');
         }
 
         // 2. Failure! Record the attempt. 

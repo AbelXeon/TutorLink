@@ -22,7 +22,9 @@
             --blue-dark:#0d3aa8;
             --line: rgba(10,10,10,0.14);
         }
-        body { font-family: 'Inter', sans-serif; }
+        * { box-sizing: border-box; }
+        html { overflow-x: hidden; }
+        body { font-family: 'Inter', sans-serif; overflow-x: hidden; }
         .display-font {
             font-family: 'Bebas Neue', sans-serif;
             letter-spacing: 0.03em;
@@ -78,14 +80,93 @@
             transition: color .15s ease;
         }
         .eye-toggle:hover { color: var(--ink); }
+
+        /* Left narrative panel — same system as the registration pages */
+        .story-panel {
+            background: var(--ink);
+            position: relative;
+            overflow: hidden;
+        }
+        .story-grid {
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(255,255,255,0.045) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.045) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+        .story-ring {
+            position: absolute;
+            right: -140px;
+            bottom: -140px;
+            width: 420px;
+            height: 420px;
+            border-radius: 50%;
+            border: 1.5px solid rgba(19,80,224,0.4);
+            background: radial-gradient(circle at 35% 30%, rgba(19,80,224,0.16), transparent 70%);
+        }
+        .story-ring-small {
+            position: absolute;
+            right: 40px;
+            bottom: 60px;
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            border: 1px solid rgba(19,80,224,0.5);
+        }
+        .story-content { position: relative; z-index: 1; }
+        .benefit-item svg { color: var(--blue); }
     </style>
 </head>
-<!-- Changed to flex-col justify-between so elements stack vertically -->
 <body class="min-h-screen flex flex-col justify-between" style="background: var(--paper);">
 
-    <!-- Added main wrapper with flex-grow to keep the login box centered -->
-    <main class="flex-grow flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-        <div class="max-w-md w-full space-y-8 bg-white p-8 swiss-panel">
+    <main class="flex-grow">
+    <div class="lg:grid lg:grid-cols-2">
+
+        <!-- LEFT: narrative / brand panel — desktop only -->
+        <div class="story-panel hidden lg:flex lg:flex-col lg:justify-between p-12 xl:p-16">
+            <div class="story-grid"></div>
+            <div class="story-ring"></div>
+            <div class="story-ring-small"></div>
+
+            <div class="story-content">
+                <p class="text-xs uppercase tracking-widest" style="color:#7d92c9;">TutorLink / Welcome Back</p>
+                <h1 class="display-font text-white mt-3" style="font-size: clamp(2.6rem, 4.2vw, 3.6rem); line-height: 0.95;">
+                    Pick Up<br>Where You<br><span style="color: var(--blue);">Left Off.</span>
+                </h1>
+                <p class="mt-6 text-sm leading-relaxed" style="color:#b5b5b5; max-width: 34ch;">
+                    Sign in to reach your dashboard, manage lesson schedules, and message your tutor or student directly.
+                </p>
+            </div>
+
+            <div class="story-content space-y-5 mt-10">
+                <div class="benefit-item flex items-start gap-3">
+                    <svg class="w-5 h-5 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 12l2 2 4-4" stroke-linecap="round" stroke-linejoin="round"/>
+                        <circle cx="12" cy="12" r="9"/>
+                    </svg>
+                    <span class="text-sm text-white">All your lessons, in one dashboard</span>
+                </div>
+                <div class="benefit-item flex items-start gap-3">
+                    <svg class="w-5 h-5 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 12l2 2 4-4" stroke-linecap="round" stroke-linejoin="round"/>
+                        <circle cx="12" cy="12" r="9"/>
+                    </svg>
+                    <span class="text-sm text-white">Message your tutor or student directly</span>
+                </div>
+                <div class="benefit-item flex items-start gap-3">
+                    <svg class="w-5 h-5 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 12l2 2 4-4" stroke-linecap="round" stroke-linejoin="round"/>
+                        <circle cx="12" cy="12" r="9"/>
+                    </svg>
+                    <span class="text-sm text-white">Track upcoming sessions at a glance</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT: the login form -->
+        <div class="flex items-center justify-center py-12 px-4 sm:px-6 lg:px-10 xl:px-16">
+        <div class="max-w-md w-full space-y-8">
             <div>
                 <h2 class="mt-6 text-center text-3xl display-font text-gray-900">
                     Sign in to your account
@@ -186,6 +267,9 @@
                 </div>
             </div>
         </div>
+        </div>
+
+    </div>
     </main>
 
     @include('Layouts.Footer')

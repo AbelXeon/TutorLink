@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Access the secure TutorLink Admin Dashboard to monitor user statistics, manage tutor registrations, and review system audits.">
     <title>Admin Dashboard - TutorLink</title>
     <!-- Tailwind CSS Engine -->
     <script src="https://cdn.tailwindcss.com"></script>

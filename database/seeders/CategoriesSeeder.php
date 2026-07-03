@@ -16,32 +16,89 @@ class CategoriesSeeder extends Seeder
     {
          // 1. Define Categories and their corresponding Subjects
         $data = [
-            'Language' => [
-                'English', 
-                'Amharic', 
-                'French', 
-                'Oromiffa'
-            ],
-            'Programming' => [
-                'Python', 
-                'JavaScript', 
-                'PHP', 
-                'Java', 
-                'C++'
-            ],
-            'Academic Subjects' => [
-                'Mathematics', 
-                'Physics', 
-                'Chemistry', 
-                'Biology', 
-                'History'
-            ],
-            'Skills' => [
-                'Graphic Design', 
-                'Photography', 
-                'Video Editing', 
-                'Public Speaking'
-            ]
+           'Language' => [
+        // Local Ethiopian Languages
+        'Amharic', 
+        'Oromiffa', 
+        'Tigrinya', 
+        'Somali', 
+        'Sidama', 
+        'Wolaytta', 
+        'Afar',
+        
+        // Global Languages
+        'English', 
+        'French', 
+        'Arabic',
+        'Spanish', 
+        'German', 
+        'Italian',
+        'Mandarin Chinese', 
+        'Turkish',
+        'Japanese'
+    ],
+    'Programming' => [
+        'Python', 
+        'JavaScript', 
+        'PHP', 
+        'Java', 
+        'C++', 
+        'C#', 
+        'TypeScript',
+        'Ruby', 
+        'Swift', 
+        'Kotlin', 
+        'Go', 
+        'Rust',
+        'HTML & CSS',
+        
+        
+        'SQL & Databases',
+        'Laravel (PHP Framework)',
+        'React / Vue (JS Libraries)',
+        'Node.js (Backend)',
+        'Flutter / React Native (Mobile)',
+        'Git & GitHub'
+    ],
+    'Academic Subjects' => [
+        // Mathematics
+        'General Mathematics', 
+        'Calculus & Advanced Math',
+        'Algebra',
+        'Geometry',
+        
+        // Natural Sciences
+        'Physics', 
+        'Chemistry', 
+        'Biology', 
+        'Environmental Science',
+        
+        // Social Sciences & Humanities
+        'History', 
+        'Geography',
+        'Civics & Ethical Education',
+        'Economics',
+        'Basic Accounting',
+        'Business Studies',
+        'English Literature'
+    ],
+    'Skills' => [
+        // Creative & Media
+        'Graphic Design', 
+        'Photography', 
+        'Video Editing', 
+        'Web Design & UI/UX',
+        '3D Modeling & Animation',
+        
+        // Professional Skills
+        'Public Speaking', 
+        'Content Writing & Copywriting',
+        'Academic & Research Writing',
+        'Project Management',
+        'Data Analysis',
+        'Digital Marketing & SEO',
+        'Microsoft Office (Word, Excel, PPT)'
+    ]
         ];
 
         foreach ($data as $categoryName => $subjectList) {
