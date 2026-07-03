@@ -373,20 +373,17 @@
 </main>
     @include('Layouts.Footer')
 
-    <!-- JavaScript to dynamically update addresses based on location ID -->
     <script>
-        // Mapped directly to the database IDs seeded (1 = Addis Ababa, 2 = Hawassa)
         const addressOptions = {
            // 1. Addis Ababa
     "1": [
         "Bole",
         "Megenagna",
-        "Piazza (Addis)",
-        "Arat Kilo",
+        "Piassa (Addis)",
         "Sarbet",
         "Kazanchis",
         "4 Kilo",
-        "6Kilo",
+        "6 Kilo",
         "Arada",
         "Akaki Kaliti",
         "Addis Ketema",
@@ -447,7 +444,6 @@
         "Sodo Zuria",
         "Abala Abaya",
         "Areka (town)",
-        "Bale Hawassa (town)",
         "Bayra Koysha",
         "Bedessa (town)",
         "Boditi (town)",
