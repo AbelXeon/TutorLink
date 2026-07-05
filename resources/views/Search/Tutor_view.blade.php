@@ -3,18 +3,151 @@
 @section('title', 'Find Tutors - TutorLink')
 
 @section('content')
-<div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap');
+
+    :root{
+        --ink:#0a0a0a;
+        --paper:#f5f4f1;
+        --white:#ffffff;
+        --blue:#1350e0;
+        --blue-dark:#0d3aa8;
+        --line: rgba(10,10,10,0.14);
+    }
+    .browse-wrap { font-family: 'Inter', sans-serif; }
+    .display-font {
+        font-family: 'Bebas Neue', sans-serif;
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+    }
+    .swiss-panel { border-radius: 0; border: 1px solid var(--line); box-shadow: none; background: var(--white); }
+    .swiss-select {
+        border-radius: 0;
+        border: 1px solid var(--line);
+        appearance: none;
+        -webkit-appearance: none;
+        background-color: var(--white);
+        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%230a0a0a' stroke-width='2'><path d='M6 9l6 6 6-6' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+        background-repeat: no-repeat;
+        background-position: right 0.65rem center;
+        background-size: 12px;
+        padding-right: 2rem;
+        cursor: pointer;
+    }
+    .swiss-select:disabled {
+        background-color: var(--paper);
+        color: #9a9a9a;
+        cursor: not-allowed;
+        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23b0b0b0' stroke-width='2'><path d='M6 9l6 6 6-6' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+    }
+    .swiss-select:focus { outline: none; border-color: var(--ink); }
+    .swiss-input {
+        border-radius: 0;
+        border: 1px solid var(--line);
+    }
+    .swiss-input:focus { outline: none; border-color: var(--ink); box-shadow: none; }
+    .btn-swiss-primary {
+        border-radius: 0;
+        background-color: var(--ink);
+        border: 1px solid var(--ink);
+        transition: background-color .15s ease, border-color .15s ease;
+    }
+    .btn-swiss-primary:hover { background-color: var(--blue); border-color: var(--blue); }
+    .btn-swiss-outline {
+        border-radius: 0;
+        border: 1px solid var(--line);
+        color: #374151;
+        background: var(--white);
+        transition: background-color .15s ease;
+    }
+    .btn-swiss-outline:hover { background: var(--paper); }
+    .btn-swiss-accent {
+        border-radius: 0;
+        background-color: var(--blue);
+        border: 1px solid var(--blue);
+        transition: background-color .15s ease;
+    }
+    .btn-swiss-accent:hover { background-color: var(--blue-dark); }
+    .btn-disabled-flat {
+        border-radius: 0;
+        border: 1px solid var(--line);
+        background: var(--paper);
+        color: #9a9a9a;
+        cursor: not-allowed;
+    }
+
+    /* Sticky filter sidebar: stays in place while only the results column scrolls */
+    .filters-sticky {
+        align-self: start;
+    }
+    @media (min-width: 1024px) {
+        .filters-sticky {
+            position: sticky;
+            top: 1.5rem;
+        }
+    }
+
+    .verified-tick { color: var(--blue); }
+    .meta-icon { color: #9a9a9a; }
+    .mode-chip {
+        text-transform: capitalize;
+        color: var(--blue-dark);
+        background: rgba(19,80,224,0.06);
+        border: 1px solid rgba(19,80,224,0.25);
+        padding: 0.15rem 0.5rem;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
+    .stat-block { background: var(--paper); border: 1px solid var(--line); }
+    .status-dot { border-radius: 2px; }
+
+    /* Booking modal */
+    #booking_modal .swiss-panel { border-radius: 0; }
+    .cal-day-available {
+        background: rgba(19,80,224,0.06);
+        color: var(--blue-dark);
+        border: 1px solid rgba(19,80,224,0.25);
+    }
+    .cal-day-available:hover { background: rgba(19,80,224,0.14); }
+    .cal-day-selected {
+        background: var(--ink) !important;
+        color: var(--white) !important;
+        border: 1px solid var(--ink) !important;
+    }
+    .cal-day-disabled { color: #d0d0d0; cursor: not-allowed; }
+    .time-slot-btn {
+        border-radius: 0;
+        border: 1px solid var(--line);
+        transition: border-color .15s ease, background-color .15s ease;
+    }
+    .time-slot-btn:hover { border-color: var(--blue); background: rgba(19,80,224,0.05); }
+    .time-slot-selected {
+        border-color: var(--ink) !important;
+        background: var(--ink) !important;
+        color: var(--white) !important;
+    }
+</style>
+
+<div class="browse-wrap grid grid-cols-1 lg:grid-cols-4 gap-8 lg:items-start">
 
     <!-- SIDEBAR FILTERS -->
-    <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 h-fit">
-        <h3 class="text-lg font-bold text-gray-900 mb-4">Filters</h3>
-        
+    <div class="filters-sticky swiss-panel p-6 h-fit">
+        <p class="text-xs uppercase tracking-widest text-gray-500 mb-4 flex items-center gap-2">
+            <svg class="w-4 h-4" style="color: var(--blue);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 5H20L14 12.5V19L10 21V12.5L4 5Z" stroke-linejoin="round"/>
+            </svg>
+            Filters
+        </p>
+
         <form action="{{ route('tutors.browse') }}" method="GET" class="space-y-4">
-            
+
             <!-- City Selection -->
             <div>
                 <label for="location_id" class="block text-xs font-bold text-gray-700 uppercase">City</label>
-                <select id="location_id" name="location_id" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md text-sm focus:ring-indigo-500">
+                <select id="location_id" name="location_id" class="swiss-select mt-1 block w-full py-2 px-3 text-sm">
                     <option value="">All Cities</option>
                     @foreach($locations as $loc)
                         <option value="{{ $loc->id }}" {{ request('location_id') == $loc->id ? 'selected' : '' }}>
@@ -27,7 +160,7 @@
             <!-- Address Selection -->
             <div>
                 <label for="address" class="block text-xs font-bold text-gray-700 uppercase">Sub-City / District</label>
-                <select id="address" name="address" disabled class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-gray-100 rounded-md text-sm focus:ring-indigo-500">
+                <select id="address" name="address" disabled class="swiss-select mt-1 block w-full py-2 px-3 text-sm">
                     <option value="">Select a City first</option>
                 </select>
             </div>
@@ -35,7 +168,7 @@
             <!-- Category Selection -->
             <div>
                 <label for="category_id" class="block text-xs font-bold text-gray-700 uppercase">Category</label>
-                <select id="category_id" name="category_id" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md text-sm focus:ring-indigo-500">
+                <select id="category_id" name="category_id" class="swiss-select mt-1 block w-full py-2 px-3 text-sm">
                     <option value="">All Categories</option>
                     @foreach($categories as $cat)
                         <option value="{{ $cat->id }}" {{ request('category_id') == $cat->id ? 'selected' : '' }}>
@@ -48,7 +181,7 @@
             <!-- Subject Selection -->
             <div>
                 <label for="subject_id" class="block text-xs font-bold text-gray-700 uppercase">Subject</label>
-                <select id="subject_id" name="subject_id" disabled class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-gray-100 rounded-md text-sm focus:ring-indigo-500">
+                <select id="subject_id" name="subject_id" disabled class="swiss-select mt-1 block w-full py-2 px-3 text-sm">
                     <option value="">Select a Category first</option>
                 </select>
             </div>
@@ -56,7 +189,7 @@
             <!-- Teaching Mode Selection -->
             <div>
                 <label for="teaching_mode" class="block text-xs font-bold text-gray-700 uppercase">Teaching Method</label>
-                <select id="teaching_mode" name="teaching_mode" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md text-sm focus:ring-indigo-500">
+                <select id="teaching_mode" name="teaching_mode" class="swiss-select mt-1 block w-full py-2 px-3 text-sm">
                     <option value="">All Methods</option>
                     <option value="online" {{ request('teaching_mode') == 'online' ? 'selected' : '' }}>Online</option>
                     <option value="in-person" {{ request('teaching_mode') == 'in-person' ? 'selected' : '' }}>In-Person</option>
@@ -65,10 +198,10 @@
             </div>
 
             <div class="pt-2">
-                <button type="submit" class="w-full flex justify-center py-2 px-4 border border-transparent text-sm font-semibold rounded-md text-white bg-indigo-600 hover:bg-indigo-700 transition">
+                <button type="submit" class="btn-swiss-primary w-full flex justify-center py-2 px-4 text-sm font-semibold text-white">
                     Apply Filters
                 </button>
-                <a href="{{ route('tutors.browse') }}" class="mt-2 w-full flex justify-center py-2 px-4 border border-gray-300 text-sm font-semibold rounded-md text-gray-700 bg-white hover:bg-gray-50 transition">
+                <a href="{{ route('tutors.browse') }}" class="btn-swiss-outline mt-2 w-full flex justify-center py-2 px-4 text-sm font-semibold">
                     Clear All
                 </a>
             </div>
@@ -79,42 +212,55 @@
     <div class="lg:col-span-3 space-y-6">
         @forelse($tutors as $tutor)
             <!-- Tutor Card -->
-            <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 flex flex-col md:flex-row gap-6 relative">
-                
+            <div class="swiss-panel p-6 flex flex-col md:flex-row gap-6 relative">
+
                 <!-- Left Column: Square Image with Active Status Indicator -->
                 <div class="relative w-32 h-32 md:w-36 md:h-36 flex-shrink-0">
                     @if($tutor->user->profile_image)
-                        <img src="{{ asset('storage/' . $tutor->user->profile_image) }}" alt="Photo" class="w-full h-full object-cover rounded-md">
+                        <img src="{{ asset('storage/' . $tutor->user->profile_image) }}" alt="Photo" class="w-full h-full object-cover" style="border: 1px solid var(--line);">
                     @else
-                        <div class="w-full h-full bg-indigo-100 rounded-md flex items-center justify-center text-indigo-500 text-2xl font-bold">
+                        <div class="w-full h-full flex items-center justify-center text-2xl display-font" style="background: var(--paper); color: var(--ink); border: 1px solid var(--line);">
                             {{ substr($tutor->user->first_name, 0, 1) }}{{ substr($tutor->user->last_name, 0, 1) }}
                         </div>
                     @endif
-                    <span class="absolute bottom-0 right-0 block h-4 w-4 rounded-sm bg-green-500 ring-2 ring-white"></span>
+                    <span class="status-dot absolute bottom-0 right-0 block h-4 w-4 bg-green-500 ring-2 ring-white"></span>
                 </div>
 
                 <!-- Center Column: Profile Info & Snippet -->
                 <div class="flex-grow space-y-2">
                     <div class="flex items-center gap-2">
-                        <h4 class="text-xl font-bold text-gray-900">
+                        <h4 class="text-xl display-font text-gray-900">
                             {{ $tutor->user->first_name }} {{ substr($tutor->user->last_name, 0, 1) }}.
                         </h4>
-                        <span class="text-blue-500" title="Verified Tutor">✓</span>
+                        <svg class="verified-tick w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" title="Verified Tutor">
+                            <circle cx="12" cy="12" r="9"/>
+                            <path d="M8.5 12.5L11 15L16 9" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
                     </div>
 
                     <div class="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-gray-500 font-medium">
-                        <span class="flex items-center gap-1">⭐ Super Tutor</span>
+                        <span class="flex items-center gap-1">
+                            <svg class="meta-icon w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3L14.6 9L21 9.8L16.5 14.1L17.6 20.5L12 17.4L6.4 20.5L7.5 14.1L3 9.8L9.4 9L12 3Z" stroke-linejoin="round"/></svg>
+                            Super Tutor
+                        </span>
                         <span>•</span>
-                        <span>🎓 {{ $tutor->qualification }}</span>
+                        <span class="flex items-center gap-1">
+                            <svg class="meta-icon w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3L2 8L12 13L22 8L12 3Z" stroke-linejoin="round"/></svg>
+                            {{ $tutor->qualification }}
+                        </span>
                         <span>•</span>
-                        <span>📍 {{ $tutor->user->location?->name }}, {{ $tutor->user->address }}</span>
+                        <span class="flex items-center gap-1">
+                            <svg class="meta-icon w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21C12 21 19 14.5 19 9.5C19 5.4 15.9 2 12 2C8.1 2 5 5.4 5 9.5C5 14.5 12 21 12 21Z" stroke-linejoin="round"/><circle cx="12" cy="9.5" r="2.5"/></svg>
+                            {{ $tutor->user->location?->name }}, {{ $tutor->user->address }}
+                        </span>
                         <span>•</span>
-                        <span class="capitalize text-indigo-700 bg-indigo-50/60 px-2 py-0.5 rounded border border-indigo-100/50 font-bold">
-                            💻 {{ $tutor->teaching_mode }}
+                        <span class="mode-chip">
+                            <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="12" rx="0.5"/><path d="M3 13H21" stroke-linecap="round"/><path d="M7 20H17" stroke-linecap="round"/></svg>
+                            {{ $tutor->teaching_mode }}
                         </span>
                     </div>
 
-                    <p class="text-sm font-semibold text-indigo-600">
+                    <p class="text-sm font-semibold" style="color: var(--blue);">
                         {{ $tutor->subjects->pluck('name')->implode(', ') }}
                     </p>
 
@@ -122,21 +268,21 @@
                         {{ $tutor->bio }}
                     </p>
 
-                    <a href="{{ route('tutors.profile', $tutor->user->username) }}" aria-label="View {{ $tutor->user->first_name }}'s full teaching profile" class="inline-block text-xs font-bold text-indigo-600 hover:underline">
+                    <a href="{{ route('tutors.profile', $tutor->user->username) }}" aria-label="View {{ $tutor->user->first_name }}'s full teaching profile" class="inline-block text-xs font-bold hover:underline" style="color: var(--blue);">
                         View profile &rarr;
                     </a>
                 </div>
 
                 <!-- Right Column: Price, Statistics, Action Buttons -->
-                <div class="w-full md:w-48 flex-shrink-0 border-t md:border-t-0 md:border-l border-gray-100 pt-4 md:pt-0 md:pl-6 flex flex-col justify-between">
+                <div class="w-full md:w-48 flex-shrink-0 border-t md:border-t-0 md:border-l pt-4 md:pt-0 md:pl-6 flex flex-col justify-between" style="border-color: var(--line);">
                     <div>
-                        <div class="text-2xl font-extrabold text-gray-900">
+                        <div class="text-2xl display-font text-gray-900">
                             ETB {{ number_format($tutor->price_per_hour, 2) }}
                         </div>
                         <span class="text-xs text-gray-500">per-hour lesson</span>
                     </div>
 
-                    <div class="grid grid-cols-3 gap-2 text-center my-3 bg-gray-50 p-2 rounded-md">
+                    <div class="stat-block grid grid-cols-3 gap-2 text-center my-3 p-2">
                         <div>
                             <span class="block text-xs font-bold text-gray-900">{{ number_format($tutor->average_rating, 1) }} ★</span>
                             <span class="text-[10px] text-gray-500">({{ $tutor->reviews_count }}) revs</span>
@@ -153,22 +299,22 @@
 
                     <!-- Call To Action Buttons (Updated to intercept messaging if unbooked) -->
                     <div class="space-y-2">
-                        <button type="button" 
+                        <button type="button"
                             onclick="openBookingModal('{{ $tutor->user->username }}', '{{ $tutor->user->first_name }} {{ $tutor->user->last_name }}', {{ json_encode($tutor->user->schedules) }})"
-                            class="w-full block text-center py-2 px-3 text-xs font-bold rounded-md text-white bg-rose-700 hover:bg-rose-800 transition shadow-sm">
+                            class="btn-swiss-accent w-full block text-center py-2 px-3 text-xs font-bold text-white">
                             Book lesson
                         </button>
 
                         @if(Auth::check() && in_array($tutor->user_id, $allowedTutorIds))
                             <!-- Active Direct Chat Link -->
-                            <a href="{{ route('messages.show', $tutor->user->username) }}" class="w-full block text-center py-2 px-3 text-xs font-bold rounded-md text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 transition shadow-sm">
+                            <a href="{{ route('messages.show', $tutor->user->username) }}" class="btn-swiss-outline w-full block text-center py-2 px-3 text-xs font-bold">
                                 Send message
                             </a>
                         @else
                             <!-- Informative Front-End Booking Prompt Button -->
-                            <button type="button" 
-                                onclick="alert('Security Restriction: You must book a lesson with {{ $tutor->user->first_name }} and have it accepted before you can message them.')" 
-                                class="w-full block text-center py-2 px-3 text-xs font-bold rounded-md text-gray-400 bg-gray-50 border border-gray-200 cursor-not-allowed transition">
+                            <button type="button"
+                                onclick="alert('Security Restriction: You must book a lesson with {{ $tutor->user->first_name }} and have it accepted before you can message them.')"
+                                class="btn-disabled-flat w-full block text-center py-2 px-3 text-xs font-bold">
                                 Send message
                             </button>
                         @endif
@@ -177,7 +323,7 @@
 
             </div>
         @empty
-            <div class="text-center py-12 bg-white rounded-lg border border-gray-200 p-6">
+            <div class="swiss-panel text-center py-12 p-6">
                 <p class="text-gray-500">No tutors found matching your current filter choices.</p>
             </div>
         @endforelse
@@ -187,14 +333,14 @@
 
 <!-- INTERACTIVE BOOKING MODAL (Blurred backdrop overlay) -->
 <div id="booking_modal" class="hidden fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-black bg-opacity-50 backdrop-blur-sm select-none transition duration-300">
-    <div class="bg-white rounded-lg shadow-xl border border-gray-200 w-full max-w-xl p-8 relative">
-        <button type="button" id="close_booking_modal" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 focus:outline-none">
+    <div class="swiss-panel bg-white w-full max-w-xl p-8 relative">
+        <button type="button" id="close_booking_modal" class="absolute top-4 right-4 text-gray-400 hover:text-gray-700 focus:outline-none">
             <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
         </button>
 
-        <div class="border-b border-gray-200 pb-4 mb-6">
-            <h2 class="text-2xl font-extrabold text-gray-900">Book a Lesson</h2>
-            <p class="text-sm text-gray-500 mt-1">Schedule a session with <strong id="modal_tutor_name" class="text-indigo-600"></strong></p>
+        <div class="pb-4 mb-6" style="border-bottom: 1px solid var(--line);">
+            <h2 class="text-2xl display-font text-gray-900">Book a Lesson</h2>
+            <p class="text-sm text-gray-500 mt-1">Schedule a session with <strong id="modal_tutor_name" style="color: var(--blue);"></strong></p>
         </div>
 
         <form id="booking_form" action="" method="POST" class="space-y-6">
@@ -209,12 +355,16 @@
             <!-- 1. Highlighted Calendar Grid -->
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-3">Select Date (Highlighted Days are Available)</label>
-                <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <div class="p-4" style="background: var(--paper); border: 1px solid var(--line);">
                     <div class="flex justify-between items-center mb-4">
                         <span id="calendar_month_year" class="text-sm font-bold text-gray-900"></span>
                         <div class="flex gap-2">
-                            <button type="button" id="prev_month" class="p-1.5 text-gray-600 hover:bg-gray-200 rounded-md text-xs font-bold">&larr;</button>
-                            <button type="button" id="next_month" class="p-1.5 text-gray-600 hover:bg-gray-200 rounded-md text-xs font-bold">&rarr;</button>
+                            <button type="button" id="prev_month" class="p-1.5 text-gray-600 hover:bg-gray-200 text-xs font-bold">
+                                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 6L9 12L15 18" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            </button>
+                            <button type="button" id="next_month" class="p-1.5 text-gray-600 hover:bg-gray-200 text-xs font-bold">
+                                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 6L15 12L9 18" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            </button>
                         </div>
                     </div>
                     <div class="grid grid-cols-7 gap-1 text-center text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
@@ -233,12 +383,12 @@
             <!-- 3. Booking Notes -->
             <div>
                 <label for="note" class="block text-sm font-medium text-gray-700">Message / Note to Tutor (Optional)</label>
-                <textarea id="note" name="note" rows="3" placeholder="Tell the tutor what topics you'd like to focus on during this lesson..." class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">{{ old('note') }}</textarea>
+                <textarea id="note" name="note" rows="3" placeholder="Tell the tutor what topics you'd like to focus on during this lesson..." class="swiss-input mt-1 block w-full px-3 py-2 sm:text-sm">{{ old('note') }}</textarea>
             </div>
 
-            <div class="pt-4 border-t border-gray-100 flex justify-end gap-3">
-                <button type="button" id="cancel_booking_modal" class="px-4 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition">Cancel</button>
-                <button type="submit" id="submit_btn" disabled class="px-5 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-md hover:bg-indigo-700 disabled:opacity-50 transition shadow-sm">Request Session Booking</button>
+            <div class="pt-4 flex justify-end gap-3" style="border-top: 1px solid var(--line);">
+                <button type="button" id="cancel_booking_modal" class="btn-swiss-outline px-4 py-2 text-sm font-semibold">Cancel</button>
+                <button type="submit" id="submit_btn" disabled class="btn-swiss-primary px-5 py-2 text-sm font-semibold text-white disabled:opacity-50">Request Session Booking</button>
             </div>
         </form>
     </div>
@@ -393,26 +543,26 @@
 
             const button = document.createElement('button');
             button.type = 'button';
-            button.className = "h-8 w-8 text-xs font-semibold rounded-full flex items-center justify-center mx-auto transition select-none ";
+            button.className = "h-8 w-8 text-xs font-semibold flex items-center justify-center mx-auto transition select-none ";
 
             const isFutureOrToday = dateObj.setHours(0,0,0,0) >= today.setHours(0,0,0,0);
             const isAvailableDay = tutorActiveWeekdays.includes(dayName);
 
             if (isFutureOrToday && isAvailableDay) {
-                button.classList.add('bg-indigo-50', 'text-indigo-600', 'hover:bg-indigo-100', 'cursor-pointer', 'border', 'border-indigo-200');
+                button.classList.add('cal-day-available', 'cursor-pointer');
                 button.setAttribute('data-date', dateString);
                 button.addEventListener('click', function() {
                     document.querySelectorAll('[data-date]').forEach(btn => {
-                        btn.classList.remove('bg-indigo-600', 'text-white', 'hover:bg-indigo-700');
-                        btn.classList.add('bg-indigo-50', 'text-indigo-600', 'hover:bg-indigo-100');
+                        btn.classList.remove('cal-day-selected');
+                        btn.classList.add('cal-day-available');
                     });
-                    this.classList.remove('bg-indigo-50', 'text-indigo-600', 'hover:bg-indigo-100');
-                    this.classList.add('bg-indigo-600', 'text-white', 'hover:bg-indigo-700');
+                    this.classList.remove('cal-day-available');
+                    this.classList.add('cal-day-selected');
                     sessionDateInput.value = dateString;
                     showSlots(dayName);
                 });
             } else {
-                button.classList.add('text-gray-300', 'cursor-not-allowed');
+                button.classList.add('cal-day-disabled');
                 button.disabled = true;
             }
             button.textContent = dayNum;
@@ -432,11 +582,11 @@
                 button.type = 'button';
                 const startClean = slot.start_time.substring(0, 5);
                 const endClean = slot.end_time.substring(0, 5);
-                button.className = "time-slot-btn py-2.5 px-4 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:border-indigo-500 hover:bg-indigo-50 transition text-center";
+                button.className = "time-slot-btn py-2.5 px-4 text-sm font-medium text-gray-700 text-center";
                 button.textContent = `${startClean} - ${endClean}`;
                 button.addEventListener('click', function() {
-                    document.querySelectorAll('.time-slot-btn').forEach(btn => btn.classList.remove('border-indigo-600', 'bg-indigo-50', 'text-indigo-700'));
-                    this.classList.add('border-indigo-600', 'bg-indigo-50', 'text-indigo-700');
+                    document.querySelectorAll('.time-slot-btn').forEach(btn => btn.classList.remove('time-slot-selected'));
+                    this.classList.add('time-slot-selected');
                     startTimeInput.value = slot.start_time.substring(0, 5);
                     endTimeInput.value = slot.end_time.substring(0, 5);
                     submitBtn.disabled = false;

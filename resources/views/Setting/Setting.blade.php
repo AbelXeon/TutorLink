@@ -1,9 +1,74 @@
 <!-- GLOBAL SETTINGS MODAL OVERLAY -->
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap');
+    :root{
+        --ink:#0a0a0a;
+        --paper:#f5f4f1;
+        --white:#ffffff;
+        --blue:#1350e0;
+        --blue-dark:#0d3aa8;
+        --line: rgba(10,10,10,0.14);
+    }
+    #settings_modal { font-family: 'Inter', sans-serif; }
+    #settings_modal .display-font {
+        font-family: 'Bebas Neue', sans-serif;
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+    }
+    #settings_modal .swiss-panel { border-radius: 0; border: 1px solid var(--line); box-shadow: none; }
+    #settings_modal .swiss-input {
+        border-radius: 0;
+        border: 1px solid var(--line);
+        transition: border-color .15s ease;
+    }
+    #settings_modal .swiss-input:focus {
+        outline: none;
+        border-color: var(--ink);
+        box-shadow: none;
+    }
+    #settings_modal .menu-btn {
+        border-radius: 0;
+        border: 1px solid var(--line);
+        background: var(--white);
+        transition: background-color .15s ease, border-color .15s ease;
+    }
+    #settings_modal .menu-btn:hover { background: var(--paper); border-color: var(--ink); }
+    #settings_modal .menu-btn svg.leading { color: var(--blue); }
+    #settings_modal .btn-swiss-primary {
+        border-radius: 0;
+        background-color: var(--ink);
+        border: 1px solid var(--ink);
+        transition: background-color .15s ease, border-color .15s ease;
+    }
+    #settings_modal .btn-swiss-primary:hover { background-color: var(--blue); border-color: var(--blue); }
+    #settings_modal .btn-swiss-outline {
+        border-radius: 0;
+        border: 1px solid var(--line);
+        color: #374151;
+        background: var(--white);
+        transition: background-color .15s ease;
+    }
+    #settings_modal .btn-swiss-outline:hover { background: var(--paper); }
+    #settings_modal .btn-danger-outline {
+        border-radius: 0;
+        border: 1px solid #fecaca;
+        color: #dc2626;
+        background: #fef2f2;
+        transition: background-color .15s ease;
+    }
+    #settings_modal .btn-danger-outline:hover { background: #fde8e8; }
+
+    @media (max-width: 480px) {
+        #settings_modal .modal-panel { padding: 1.5rem !important; }
+        #settings_modal h2 { font-size: 1.5rem !important; }
+    }
+</style>
+
 <div id="settings_modal" class="hidden fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-black bg-opacity-50 backdrop-blur-sm select-none transition duration-300">
-    <div class="bg-white rounded-lg shadow-xl border border-gray-200 w-full max-w-md p-8 relative">
-        
+    <div class="modal-panel swiss-panel bg-white w-full max-w-md p-8 relative" style="background: var(--white);">
+
         <!-- Close (X) Button -->
-        <button type="button" id="close_settings_modal" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 focus:outline-none">
+        <button type="button" id="close_settings_modal" class="absolute top-4 right-4 text-gray-400 hover:text-gray-700 focus:outline-none">
             <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -11,25 +76,41 @@
 
         <!-- SCREEN 1: MAIN SETTINGS MENU -->
         <div id="settings_screen_menu" class="space-y-6">
-            <div class="border-b border-gray-200 pb-4 mb-4">
-                <h2 class="text-2xl font-extrabold text-gray-900">Account Settings</h2>
+            <div class="pb-4 mb-4" style="border-bottom: 1px solid var(--line);">
+                <h2 class="text-2xl display-font text-gray-900">Account Settings</h2>
                 <p class="text-xs text-gray-500 mt-1">Select an administrative task to modify your credentials.</p>
             </div>
 
             <div class="space-y-3">
-                <button type="button" onclick="selectAction('username')" class="w-full flex justify-between items-center px-4 py-3 bg-gray-50 hover:bg-gray-100 rounded-md border border-gray-200 text-sm font-semibold text-gray-800 transition">
-                    <span>👤 Change Username</span>
-                    <span>&rarr;</span>
+                <button type="button" onclick="selectAction('username')" class="menu-btn w-full flex justify-between items-center px-4 py-3 text-sm font-semibold text-gray-800">
+                    <span class="inline-flex items-center gap-2">
+                        <svg class="leading w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="8" r="3.5"/>
+                            <path d="M4.5 20C4.5 16 7.8 13.5 12 13.5C16.2 13.5 19.5 16 19.5 20" stroke-linecap="round"/>
+                        </svg>
+                        Change Username
+                    </span>
+                    <svg class="w-4 h-4 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
                 </button>
-                <button type="button" onclick="selectAction('password')" class="w-full flex justify-between items-center px-4 py-3 bg-gray-50 hover:bg-gray-100 rounded-md border border-gray-200 text-sm font-semibold text-gray-800 transition">
-                    <span>🔑 Change Password</span>
-                    <span>&rarr;</span>
+                <button type="button" onclick="selectAction('password')" class="menu-btn w-full flex justify-between items-center px-4 py-3 text-sm font-semibold text-gray-800">
+                    <span class="inline-flex items-center gap-2">
+                        <svg class="leading w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="4" y="10" width="16" height="10" rx="0.5"/>
+                            <path d="M7 10V7a5 5 0 0 1 10 0v3" stroke-linecap="round"/>
+                        </svg>
+                        Change Password
+                    </span>
+                    <svg class="w-4 h-4 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
                 </button>
             </div>
 
-            <div class="pt-6 border-t border-gray-100">
+            <div class="pt-6" style="border-top: 1px solid var(--line);">
                 <!-- Secure Logout Form inside Settings Menu -->
-                <button type="button" onclick="document.getElementById('settings_logout_form').submit()" class="w-full py-2.5 px-4 rounded-md text-sm font-semibold text-center text-red-600 border border-red-200 bg-red-50 hover:bg-red-100/50 transition">
+                <button type="button" onclick="document.getElementById('settings_logout_form').submit()" class="btn-danger-outline w-full py-2.5 px-4 text-sm font-semibold text-center">
                     Logout Account
                 </button>
             </div>
@@ -37,27 +118,27 @@
 
         <!-- SCREEN 2: ENTER EMAIL FOR VERIFICATION -->
         <div id="settings_screen_email" class="hidden space-y-6">
-            <div class="border-b border-gray-200 pb-4 mb-4">
-                <h2 class="text-2xl font-extrabold text-gray-900">Verify Identity</h2>
+            <div class="pb-4 mb-4" style="border-bottom: 1px solid var(--line);">
+                <h2 class="text-2xl display-font text-gray-900">Verify Identity</h2>
                 <p class="text-sm text-gray-500 mt-1">Please enter your registered email address to request a verification code.</p>
             </div>
 
-            <div id="email_error" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded text-xs font-semibold"></div>
+            <div id="email_error" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-2 text-xs font-semibold"></div>
 
             <form id="settings_email_form" action="{{ route('settings.send_code') }}" method="POST" class="space-y-4">
                 @csrf
                 <input type="hidden" id="selected_action" name="action">
-                
+
                 <div>
                     <label for="verification_email" class="block text-xs font-bold text-gray-700 uppercase">Registered Email</label>
-                    <input id="verification_email" name="email" type="email" required placeholder="email@example.com" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-indigo-500">
+                    <input id="verification_email" name="email" type="email" required placeholder="email@example.com" class="swiss-input mt-1 block w-full px-3 py-2 text-sm">
                 </div>
 
-                <div class="pt-4 border-t border-gray-100 flex justify-end gap-3">
-                    <button type="button" onclick="showScreen('menu')" class="px-4 py-2 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition">
+                <div class="pt-4 flex justify-end gap-3" style="border-top: 1px solid var(--line);">
+                    <button type="button" onclick="showScreen('menu')" class="btn-swiss-outline px-4 py-2 text-xs font-semibold">
                         Back
                     </button>
-                    <button type="submit" class="px-6 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 transition">
+                    <button type="submit" class="btn-swiss-primary px-6 py-2 text-xs font-semibold text-white">
                         Request Code
                     </button>
                 </div>
@@ -66,32 +147,32 @@
 
         <!-- SCREEN 3: ENTER 6-DIGIT CODE -->
         <div id="settings_screen_code" class="hidden space-y-6">
-            <div class="border-b border-gray-200 pb-4 mb-4">
-                <h2 class="text-2xl font-extrabold text-gray-900">Enter Code</h2>
+            <div class="pb-4 mb-4" style="border-bottom: 1px solid var(--line);">
+                <h2 class="text-2xl display-font text-gray-900">Enter Code</h2>
                 <p class="text-sm text-gray-500 mt-1">We've sent a 6-digit code to your inbox. Please enter it below.</p>
             </div>
 
-            <div id="code_error" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded text-xs font-semibold"></div>
+            <div id="code_error" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-2 text-xs font-semibold"></div>
 
             <form id="settings_code_form" action="{{ route('settings.verify_code') }}" method="POST" class="space-y-6">
                 @csrf
                 <div>
-                    <input id="settings_code" name="code" type="text" pattern="[0-9]{6}" maxlength="6" required placeholder="123456" class="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-400 text-gray-900 text-center tracking-widest text-lg font-bold focus:outline-none focus:ring-indigo-500">
+                    <input id="settings_code" name="code" type="text" pattern="[0-9]{6}" maxlength="6" required placeholder="123456" class="swiss-input appearance-none relative block w-full px-3 py-2 placeholder-gray-400 text-gray-900 text-center tracking-widest text-lg font-bold">
                 </div>
 
                 <!-- Resend Code Link with Ticking Countdown Timer -->
                 <div class="text-center">
-                    <button type="button" id="resend_code_btn" class="text-xs font-bold text-indigo-600 hover:text-indigo-800 disabled:text-gray-400 disabled:cursor-not-allowed">
+                    <button type="button" id="resend_code_btn" class="text-xs font-bold disabled:text-gray-400 disabled:cursor-not-allowed" style="color: var(--blue);">
                         Resend Code
                     </button>
                     <span id="resend_timer_text" class="text-xs text-gray-500 ml-1 hidden"></span>
                 </div>
 
-                <div class="pt-4 border-t border-gray-100 flex justify-end gap-3">
-                    <button type="button" onclick="showScreen('email')" class="px-4 py-2 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition">
+                <div class="pt-4 flex justify-end gap-3" style="border-top: 1px solid var(--line);">
+                    <button type="button" onclick="showScreen('email')" class="btn-swiss-outline px-4 py-2 text-xs font-semibold">
                         Back
                     </button>
-                    <button type="submit" class="px-6 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 transition">
+                    <button type="submit" class="btn-swiss-primary px-6 py-2 text-xs font-semibold text-white">
                         Verify Code
                     </button>
                 </div>
@@ -100,22 +181,22 @@
 
         <!-- SCREEN 4: UPDATE USERNAME FORM -->
         <div id="settings_screen_username" class="hidden space-y-6">
-            <div class="border-b border-gray-200 pb-4 mb-4">
-                <h2 class="text-2xl font-extrabold text-gray-900">Change Username</h2>
+            <div class="pb-4 mb-4" style="border-bottom: 1px solid var(--line);">
+                <h2 class="text-2xl display-font text-gray-900">Change Username</h2>
                 <p class="text-sm text-gray-500 mt-1">Identity verified. You can now securely choose a new username.</p>
             </div>
 
-            <div id="username_error" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded text-xs font-semibold"></div>
+            <div id="username_error" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-2 text-xs font-semibold"></div>
 
             <form id="settings_username_form" action="{{ route('settings.update_username') }}" method="POST" class="space-y-4">
                 @csrf
                 <div>
                     <label for="new_username" class="block text-xs font-bold text-gray-700 uppercase">New Username</label>
-                    <input id="new_username" name="username" type="text" required value="{{ Auth::user()->username }}" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-indigo-500">
+                    <input id="new_username" name="username" type="text" required value="{{ Auth::user()->username }}" class="swiss-input mt-1 block w-full px-3 py-2 text-sm">
                 </div>
 
-                <div class="pt-4 border-t border-gray-100 flex justify-end">
-                    <button type="submit" class="py-2 px-6 rounded-md text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 transition">
+                <div class="pt-4 flex justify-end" style="border-top: 1px solid var(--line);">
+                    <button type="submit" class="btn-swiss-primary py-2 px-6 text-xs font-semibold text-white">
                         Apply Username Change
                     </button>
                 </div>
@@ -124,28 +205,28 @@
 
         <!-- SCREEN 5: UPDATE PASSWORD FORM -->
         <div id="settings_screen_password" class="hidden space-y-6">
-            <div class="border-b border-gray-200 pb-4 mb-4">
-                <h2 class="text-2xl font-extrabold text-gray-900">Change Password</h2>
+            <div class="pb-4 mb-4" style="border-bottom: 1px solid var(--line);">
+                <h2 class="text-2xl display-font text-gray-900">Change Password</h2>
                 <p class="text-sm text-gray-500 mt-1">Identity verified. You can now securely configure a new account password.</p>
             </div>
 
-            <div id="password_error" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded text-xs font-semibold"></div>
+            <div id="password_error" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-2 text-xs font-semibold"></div>
 
             <form id="settings_password_form" action="{{ route('settings.update_password') }}" method="POST" class="space-y-4">
                 @csrf
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label for="new_password" class="block text-xs font-bold text-gray-700 uppercase">New Password</label>
-                        <input id="new_password" name="password" type="password" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-indigo-500">
+                        <input id="new_password" name="password" type="password" required class="swiss-input mt-1 block w-full px-3 py-2 text-sm">
                     </div>
                     <div>
                         <label for="new_password_confirmation" class="block text-xs font-bold text-gray-700 uppercase">Confirm New</label>
-                        <input id="new_password_confirmation" name="password_confirmation" type="password" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-indigo-500">
+                        <input id="new_password_confirmation" name="password_confirmation" type="password" required class="swiss-input mt-1 block w-full px-3 py-2 text-sm">
                     </div>
                 </div>
 
-                <div class="pt-4 border-t border-gray-100 flex justify-end">
-                    <button type="submit" class="py-2 px-6 rounded-md text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 transition">
+                <div class="pt-4 flex justify-end" style="border-top: 1px solid var(--line);">
+                    <button type="submit" class="btn-swiss-primary py-2 px-6 text-xs font-semibold text-white">
                         Apply Password Change
                     </button>
                 </div>

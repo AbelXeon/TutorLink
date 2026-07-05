@@ -10,7 +10,7 @@
         <!-- UPDATED: Dynamic Sidebar Header with Go Home Arrow Redirection -->
         <div class="p-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
             <h3 class="text-sm font-bold text-gray-900 uppercase tracking-wider">Conversations</h3>
-            
+
             @if(strtolower(Auth::user()->role?->role_type) === 'teacher')
                 <a href="{{ route('tutor.dashboard') }}" class="text-xs font-semibold text-indigo-600 hover:text-indigo-500 flex items-center gap-1 transition">
                     &larr; Dashboard
@@ -21,7 +21,7 @@
                 </a>
             @endif
         </div>
-        
+
         <div class="flex-grow overflow-y-auto divide-y divide-gray-100">
             @forelse($conversations as $conv)
                 @php
@@ -29,7 +29,7 @@
                     $lastMessage = $conv->messages->first();
                 @endphp
                 <a href="{{ route('messages.show', $otherUser->username) }}" class="flex items-center gap-3 p-4 hover:bg-gray-50 transition {{ isset($activeConversation) && $activeConversation->id === $conv->id ? 'bg-indigo-50' : '' }}">
-                    
+
                     <div class="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center font-bold text-indigo-600 flex-shrink-0">
                         {{ substr($otherUser->first_name, 0, 1) }}
                     </div>
@@ -62,7 +62,7 @@
             @php
                 $chatPartner = (Auth::id() === $activeConversation->student_id) ? $activeConversation->tutor : $activeConversation->student;
             @endphp
-            
+
             <!-- Chat Partner Header -->
             <div class="bg-white p-4 border-b border-gray-200 flex items-center gap-3 shadow-sm z-10">
                 <div class="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center font-bold text-indigo-600">
@@ -84,7 +84,7 @@
                     @endphp
                     <div class="flex {{ $isMe ? 'justify-end' : 'justify-start' }} last-message-marker" data-id="{{ $msg->id }}">
                         <div class="max-w-[70%] rounded-lg p-3 shadow-sm text-sm {{ $isMe ? 'bg-indigo-600 text-white rounded-br-none' : 'bg-white text-gray-900 rounded-bl-none' }}">
-                            
+
                             @if(!$msg->file_type)
                                 <p>{{ $msg->message_text }}</p>
 
@@ -126,7 +126,7 @@
             <div id="preview_container" class="hidden px-6 py-3 bg-gray-100 border-t border-gray-200 flex items-center justify-between shadow-inner">
                 <div class="flex items-center gap-3">
                     <img id="image_preview" src="" class="h-16 w-16 object-cover rounded border border-gray-300 shadow-sm hidden" alt="Preview" />
-                    
+
                     <div id="location_preview" class="hidden flex items-center gap-2 text-indigo-600 font-bold text-sm">
                         📍 <span id="location_coords_text"></span>
                     </div>
@@ -140,7 +140,7 @@
             <div class="bg-white p-4 border-t border-gray-200 shadow-lg">
                 <form id="chat_form" action="{{ route('messages.store', $activeConversation->id) }}" method="POST" enctype="multipart/form-data" class="flex items-center gap-3">
                     @csrf
-                    
+
                     <label for="attachment" class="p-2 bg-gray-100 hover:bg-gray-200 rounded-full cursor-pointer text-gray-500 hover:text-indigo-600 transition" title="Attach Image or Document">
                         <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
@@ -202,7 +202,7 @@
                     if (file) {
                         const extension = file.name.split('.').pop().toLowerCase();
                         locationPreview.classList.add('hidden');
-                        
+
                         if (['jpg', 'jpeg', 'png'].includes(extension)) {
                             const reader = new FileReader();
                             reader.onload = function(e) {
@@ -311,7 +311,7 @@
 
                 function appendMessageBubble(msg, isMe) {
                     if (renderedMessageIds.has(msg.id)) return;
-                    
+
                     renderedMessageIds.add(msg.id);
                     lastMessageId = msg.id;
 
@@ -357,15 +357,15 @@
                 geoBtn.addEventListener('click', function() {
                     if (navigator.geolocation) {
                         geoBtn.classList.add('text-indigo-600', 'animate-pulse');
-                        
+
                         navigator.geolocation.getCurrentPosition(
                             function(position) {
                                 const lat = position.coords.latitude.toFixed(5);
                                 const lng = position.coords.longitude.toFixed(5);
-                                
+
                                 latInput.value = position.coords.latitude;
                                 lngInput.value = position.coords.longitude;
-                                
+
                                 attachmentInput.value = '';
                                 imagePreview.classList.add('hidden');
 
