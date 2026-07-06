@@ -26,7 +26,7 @@
         font-size: 0.72rem;
         letter-spacing: 0.14em;
         text-transform: uppercase;
-        color: #8a8a8a;
+        color: #595959;
     }
     .td-icon-row { display: flex; align-items: flex-start; gap: 0.65rem; }
     .td-icon-row svg { color: #1350e0; flex-shrink: 0; margin-top: 2px; }
@@ -68,7 +68,7 @@
         font-size: 0.68rem;
         letter-spacing: 0.08em;
         text-transform: uppercase;
-        color: #8a8a8a;
+        color: #595959;
         border-bottom: 1px solid rgba(10,10,10,0.14);
     }
     .td-table td { border-bottom: 1px solid rgba(10,10,10,0.08); }
