@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="./assets/banner.svg" alt="TutorLink banner" width="100%" />
+<img src="./public/assets/banner.svg" alt="TutorLink banner" width="100%" />
 
 <br/>
 
