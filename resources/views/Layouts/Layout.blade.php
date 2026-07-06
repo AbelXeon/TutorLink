@@ -23,7 +23,11 @@
         }
         * { box-sizing: border-box; }
         html { overflow-x: hidden; }
-        body { font-family: 'Inter', sans-serif; overflow-x: hidden; }
+        body { 
+            font-family: 'Inter', sans-serif; 
+            overflow-x: hidden; 
+            padding-top: 64px; /* Ensure main contents start below the fixed header */
+        }
         .display-font {
             font-family: 'Bebas Neue', sans-serif;
             letter-spacing: 0.03em;
@@ -58,8 +62,7 @@
             50%      { box-shadow: 0 0 0 5px rgba(19,80,224,0); }
         }
 
-        /* Mobile safety: brand + badge + 3 icons all need to fit in one row
-           on narrow phones (~320px) without wrapping or overflowing. */
+        /* Mobile safety */
         @media (max-width: 480px) {
             .brand-text { font-size: 1.05rem; }
             .role-badge { font-size: 0.58rem; padding: 0.12rem 0.35rem; }
@@ -73,9 +76,9 @@
 </head>
 <body class="min-h-screen flex flex-col justify-between" style="background: var(--paper);">
 
-    <!-- 1. GLOBAL TOP HEADER BAR -->
-    <nav style="background: var(--white); border-bottom: 1px solid var(--line);">
-        <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+    <!-- 1. GLOBAL TOP HEADER BAR (PINNED TO TOP) -->
+    <nav class="fixed top-0 left-0 right-0 w-full z-50 flex items-center" style="background: var(--white); border-bottom: 1px solid var(--line); height: 64px;">
+        <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 w-full">
             <div class="flex justify-between h-16 items-center">
 
                 <!-- Logo & Brand -->
