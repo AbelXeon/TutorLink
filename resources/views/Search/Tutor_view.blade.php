@@ -77,14 +77,13 @@
         cursor: not-allowed;
     }
 
-    /* Sticky filter sidebar: stays in place while only the results column scrolls */
-    .filters-sticky {
-        align-self: start;
-    }
+    /* Fixed Layout Sidebar position selectors */
     @media (min-width: 1024px) {
-        .filters-sticky {
-            position: sticky;
-            top: 1.5rem;
+        .td-fixed-filters {
+            position: fixed;
+            top: 100px; /* Aligned nicely below topnav wrapper height of 64px */
+            width: 288px; /* 72 Spacing unit block */
+            z-index: 30;
         }
     }
 
@@ -131,85 +130,67 @@
     }
 </style>
 
-<div class="browse-wrap grid grid-cols-1 lg:grid-cols-4 gap-8 lg:items-start">
-
-    <!-- SIDEBAR FILTERS -->
-    <div class="filters-sticky swiss-panel p-6 h-fit">
-        <p class="text-xs uppercase tracking-widest text-gray-500 mb-4 flex items-center gap-2">
-            <svg class="w-4 h-4" style="color: var(--blue);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M4 5H20L14 12.5V19L10 21V12.5L4 5Z" stroke-linejoin="round"/>
-            </svg>
-            Filters
-        </p>
-
-        <form action="{{ route('tutors.browse') }}" method="GET" class="space-y-4">
-
-            <!-- City Selection -->
-            <div>
-                <label for="location_id" class="block text-xs font-bold text-gray-700 uppercase">City</label>
-                <select id="location_id" name="location_id" class="swiss-select mt-1 block w-full py-2 px-3 text-sm">
-                    <option value="">All Cities</option>
-                    @foreach($locations as $loc)
-                        <option value="{{ $loc->id }}" {{ request('location_id') == $loc->id ? 'selected' : '' }}>
-                            {{ $loc->name }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
-
-            <!-- Address Selection -->
-            <div>
-                <label for="address" class="block text-xs font-bold text-gray-700 uppercase">Sub-City / District</label>
-                <select id="address" name="address" disabled class="swiss-select mt-1 block w-full py-2 px-3 text-sm">
-                    <option value="">Select a City first</option>
-                </select>
-            </div>
-
-            <!-- Category Selection -->
-            <div>
-                <label for="category_id" class="block text-xs font-bold text-gray-700 uppercase">Category</label>
-                <select id="category_id" name="category_id" class="swiss-select mt-1 block w-full py-2 px-3 text-sm">
-                    <option value="">All Categories</option>
-                    @foreach($categories as $cat)
-                        <option value="{{ $cat->id }}" {{ request('category_id') == $cat->id ? 'selected' : '' }}>
-                            {{ $cat->name }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
-
-            <!-- Subject Selection -->
-            <div>
-                <label for="subject_id" class="block text-xs font-bold text-gray-700 uppercase">Subject</label>
-                <select id="subject_id" name="subject_id" disabled class="swiss-select mt-1 block w-full py-2 px-3 text-sm">
-                    <option value="">Select a Category first</option>
-                </select>
-            </div>
-
-            <!-- Teaching Mode Selection -->
-            <div>
-                <label for="teaching_mode" class="block text-xs font-bold text-gray-700 uppercase">Teaching Method</label>
-                <select id="teaching_mode" name="teaching_mode" class="swiss-select mt-1 block w-full py-2 px-3 text-sm">
-                    <option value="">All Methods</option>
-                    <option value="online" {{ request('teaching_mode') == 'online' ? 'selected' : '' }}>Online</option>
-                    <option value="in-person" {{ request('teaching_mode') == 'in-person' ? 'selected' : '' }}>In-Person</option>
-                    <option value="hybrid" {{ request('teaching_mode') == 'hybrid' ? 'selected' : '' }}>Hybrid</option>
-                </select>
-            </div>
-
-            <div class="pt-2">
-                <button type="submit" class="btn-swiss-primary w-full flex justify-center py-2 px-4 text-sm font-semibold text-white">
-                    Apply Filters
-                </button>
-                <a href="{{ route('tutors.browse') }}" class="btn-swiss-outline mt-2 w-full flex justify-center py-2 px-4 text-sm font-semibold">
-                    Clear All
-                </a>
-            </div>
-        </form>
+<!-- MOBILE TOP BAR WITH FILTER HAMBURGER BUTTON -->
+<div class="lg:hidden fixed top-[64px] left-0 right-0 z-40 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between" style="border-bottom: 1px solid rgba(10,10,10,0.14);">
+    <div class="flex items-center gap-2">
+        <span class="text-xs text-gray-400 font-bold uppercase tracking-wider">Tutors browse</span>
     </div>
+    <button id="mobile-filter-trigger" class="flex items-center gap-2 bg-[#0a0a0a] text-white px-3 py-1.5 text-xs font-bold tracking-wider uppercase select-none">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 4l11 4m-11 4l11-4M3 16l11-4" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 5h8M12 10h8M12 15h8M12 20h8" />
+        </svg>
+        Filter Tutors
+    </button>
+</div>
 
-    <!-- TUTOR RESULTS LIST -->
-    <div class="lg:col-span-3 space-y-6">
+<!-- Extra top gap spacer for mobile -->
+<div class="h-10 lg:hidden"></div>
+
+<!-- MOBILE SLIDE-OUT FILTER DRAWER -->
+<div id="mobile-drawer-overlay" class="fixed inset-0 bg-black/50 z-50 hidden transition-opacity duration-300"></div>
+<div id="mobile-drawer" class="fixed top-0 left-0 bottom-0 h-full w-80 max-w-[85vw] bg-white z-50 transform -translate-x-full transition-transform duration-300 ease-in-out flex flex-col justify-between border-r" style="border-right: 1px solid rgba(10,10,10,0.14);">
+    <div class="p-6 overflow-y-auto flex-grow">
+        <div class="flex items-center justify-between pb-4 mb-6 border-b" style="border-bottom: 1px solid rgba(10,10,10,0.14);">
+            <span class="display-font text-lg text-gray-900 tracking-wider">Search Filters</span>
+            <button id="mobile-drawer-close" class="text-gray-500 hover:text-black focus:outline-none">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+        
+        <!-- Target slot where the Form is dynamically repositioned in mobile view -->
+        <div id="mobile-form-slot"></div>
+    </div>
+    <div class="p-6 bg-[#f5f4f1] border-t text-center text-[11px] font-bold text-[#595959]" style="border-top: 1px solid rgba(10,10,10,0.14);">
+        TutorLink &copy; {{ date('Y') }}
+    </div>
+</div>
+
+<!-- MAIN BROWSE LAYOUT -->
+<div class="browse-wrap flex flex-col lg:flex-row gap-8 items-start relative">
+
+    <!-- DESKTOP FIXED SIDEBAR WRAPPER -->
+    <aside class="hidden lg:block w-72 shrink-0 td-fixed-filters">
+        <div class="swiss-panel p-6">
+            <p class="text-xs uppercase tracking-widest text-gray-500 mb-4 flex items-center gap-2">
+                <svg class="w-4 h-4" style="color: var(--blue);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M4 5H20L14 12.5V19L10 21V12.5L4 5Z" stroke-linejoin="round"/>
+                </svg>
+                Filters
+            </p>
+            
+            <!-- Target slot where the Form is dynamically repositioned in desktop view -->
+            <div id="desktop-form-slot"></div>
+        </div>
+    </aside>
+
+    <!-- INVISIBLE SPACER FOR PC GRID ALIGNMENT -->
+    <div class="hidden lg:block w-72 shrink-0"></div>
+
+    <!-- TUTOR RESULTS LIST (SCROLLS INDEPENDENTLY) -->
+    <div class="flex-grow w-full lg:col-span-3 space-y-6">
         @forelse($tutors as $tutor)
             <!-- Tutor Card -->
             <div class="swiss-panel p-6 flex flex-col md:flex-row gap-6 relative">
@@ -297,7 +278,7 @@
                         </div>
                     </div>
 
-                    <!-- Call To Action Buttons (Updated to intercept messaging if unbooked) -->
+                    <!-- Call To Action Buttons -->
                     <div class="space-y-2">
                         <button type="button"
                             onclick="openBookingModal('{{ $tutor->user->username }}', '{{ $tutor->user->first_name }} {{ $tutor->user->last_name }}', {{ json_encode($tutor->user->schedules) }})"
@@ -306,12 +287,10 @@
                         </button>
 
                         @if(Auth::check() && in_array($tutor->user_id, $allowedTutorIds))
-                            <!-- Active Direct Chat Link -->
                             <a href="{{ route('messages.show', $tutor->user->username) }}" class="btn-swiss-outline w-full block text-center py-2 px-3 text-xs font-bold">
                                 Send message
                             </a>
                         @else
-                            <!-- Informative Front-End Booking Prompt Button -->
                             <button type="button"
                                 onclick="alert('Security Restriction: You must book a lesson with {{ $tutor->user->first_name }} and have it accepted before you can message them.')"
                                 class="btn-disabled-flat w-full block text-center py-2 px-3 text-xs font-bold">
@@ -323,7 +302,7 @@
 
             </div>
         @empty
-            <div class="swiss-panel text-center py-12 p-6">
+            <div class="swiss-panel text-center py-12 p-6 w-full">
                 <p class="text-gray-500">No tutors found matching your current filter choices.</p>
             </div>
         @endforelse
@@ -331,7 +310,74 @@
 
 </div>
 
-<!-- INTERACTIVE BOOKING MODAL (Blurred backdrop overlay) -->
+<!-- MASTER FILTER FORM (One single instance declared in DOM, dynamically re-parented via JS depending on screen width) -->
+<div class="hidden">
+    <form id="tutor-filters-form" action="{{ route('tutors.browse') }}" method="GET" class="space-y-4">
+        <!-- City Selection -->
+        <div>
+            <label for="location_id" class="block text-xs font-bold text-gray-700 uppercase">City</label>
+            <select id="location_id" name="location_id" class="swiss-select mt-1 block w-full py-2 px-3 text-sm">
+                <option value="">All Cities</option>
+                @foreach($locations as $loc)
+                    <option value="{{ $loc->id }}" {{ request('location_id') == $loc->id ? 'selected' : '' }}>
+                        {{ $loc->name }}
+                    </option>
+                @endforeach
+            </select>
+        </div>
+
+        <!-- Address Selection -->
+        <div>
+            <label for="address" class="block text-xs font-bold text-gray-700 uppercase">Sub-City / District</label>
+            <select id="address" name="address" disabled class="swiss-select mt-1 block w-full py-2 px-3 text-sm">
+                <option value="">Select a City first</option>
+            </select>
+        </div>
+
+        <!-- Category Selection -->
+        <div>
+            <label for="category_id" class="block text-xs font-bold text-gray-700 uppercase">Category</label>
+            <select id="category_id" name="category_id" class="swiss-select mt-1 block w-full py-2 px-3 text-sm">
+                <option value="">All Categories</option>
+                @foreach($categories as $cat)
+                    <option value="{{ $cat->id }}" {{ request('category_id') == $cat->id ? 'selected' : '' }}>
+                        {{ $cat->name }}
+                    </option>
+                @endforeach
+            </select>
+        </div>
+
+        <!-- Subject Selection -->
+        <div>
+            <label for="subject_id" class="block text-xs font-bold text-gray-700 uppercase">Subject</label>
+            <select id="subject_id" name="subject_id" disabled class="swiss-select mt-1 block w-full py-2 px-3 text-sm">
+                <option value="">Select a Category first</option>
+            </select>
+        </div>
+
+        <!-- Teaching Mode Selection -->
+        <div>
+            <label for="teaching_mode" class="block text-xs font-bold text-gray-700 uppercase">Teaching Method</label>
+            <select id="teaching_mode" name="teaching_mode" class="swiss-select mt-1 block w-full py-2 px-3 text-sm">
+                <option value="">All Methods</option>
+                <option value="online" {{ request('teaching_mode') == 'online' ? 'selected' : '' }}>Online</option>
+                <option value="in-person" {{ request('teaching_mode') == 'in-person' ? 'selected' : '' }}>In-Person</option>
+                <option value="hybrid" {{ request('teaching_mode') == 'hybrid' ? 'selected' : '' }}>Hybrid</option>
+            </select>
+        </div>
+
+        <div class="pt-2">
+            <button type="submit" class="btn-swiss-primary w-full flex justify-center py-2 px-4 text-sm font-semibold text-white">
+                Apply Filters
+            </button>
+            <a href="{{ route('tutors.browse') }}" class="btn-swiss-outline mt-2 w-full flex justify-center py-2 px-4 text-sm font-semibold">
+                Clear All
+            </a>
+        </div>
+    </form>
+</div>
+
+<!-- INTERACTIVE BOOKING MODAL -->
 <div id="booking_modal" class="hidden fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-black bg-opacity-50 backdrop-blur-sm select-none transition duration-300">
     <div class="swiss-panel bg-white w-full max-w-xl p-8 relative">
         <button type="button" id="close_booking_modal" class="absolute top-4 right-4 text-gray-400 hover:text-gray-700 focus:outline-none">
@@ -395,6 +441,54 @@
 </div>
 
 <script>
+    // --- DYNAMIC FORM RE-PARENTING CONTROLLER ---
+    const mainFiltersForm = document.getElementById('tutor-filters-form');
+    const desktopFormSlot = document.getElementById('desktop-form-slot');
+    const mobileFormSlot = document.getElementById('mobile-form-slot');
+
+    function syncFormPosition() {
+        if (window.innerWidth >= 1024) { // Desktop
+            if (desktopFormSlot && mainFiltersForm.parentNode !== desktopFormSlot) {
+                desktopFormSlot.appendChild(mainFiltersForm);
+            }
+        } else { // Mobile
+            if (mobileFormSlot && mainFiltersForm.parentNode !== mobileFormSlot) {
+                mobileFormSlot.appendChild(mainFiltersForm);
+            }
+        }
+    }
+
+    window.addEventListener('resize', syncFormPosition);
+    syncFormPosition(); // Trigger on initial load
+
+
+    // --- MOBILE DRAWER EVENT HANDLERS ---
+    const mobileFilterTrigger = document.getElementById('mobile-filter-trigger');
+    const mobileDrawerOverlay = document.getElementById('mobile-drawer-overlay');
+    const mobileDrawer = document.getElementById('mobile-drawer');
+    const mobileDrawerClose = document.getElementById('mobile-drawer-close');
+
+    function openMobileFilters() {
+        mobileDrawerOverlay.classList.remove('hidden');
+        setTimeout(() => {
+            mobileDrawerOverlay.classList.add('opacity-100');
+            mobileDrawer.classList.remove('-translate-x-full');
+        }, 50);
+    }
+
+    function closeMobileFilters() {
+        mobileDrawerOverlay.classList.remove('opacity-100');
+        mobileDrawer.classList.add('-translate-x-full');
+        setTimeout(() => {
+            mobileDrawerOverlay.classList.add('hidden');
+        }, 300);
+    }
+
+    if (mobileFilterTrigger) mobileFilterTrigger.addEventListener('click', openMobileFilters);
+    if (mobileDrawerClose) mobileDrawerClose.addEventListener('click', closeMobileFilters);
+    if (mobileDrawerOverlay) mobileDrawerOverlay.addEventListener('click', closeMobileFilters);
+
+
     // --- SIDEBAR DROPDOWNS MAPS ---
     const addressOptions = {
         "1": ["Bole", "Megenagna", "Piazza (Addis)", "Arat Kilo", "Sarbet", "Kazanchis"],

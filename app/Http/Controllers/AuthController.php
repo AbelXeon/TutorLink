@@ -22,9 +22,9 @@ class AuthController extends Controller
      // Show Teacher Registration Form
     public function showTeacherRegisterForm()
     {
-        // Get locations for the dropdown
+       
         $locations = Location::all();
-        // Uses the dot notation matching your views folder 'resources/views/auth/Teacher_Register.blade.php'
+        
         return view('Auth.Teacher_Register', compact('locations'));
     }
 

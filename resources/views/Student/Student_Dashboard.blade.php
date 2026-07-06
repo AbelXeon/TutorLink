@@ -135,7 +135,9 @@
             </p>
 
             @if($bookings->count() > 0)
-                <div class="overflow-x-auto border" style="border-color: var(--line);">
+                
+                <!-- DESKTOP VIEW: CLEAN LAYOUT TABLE -->
+                <div class="hidden sm:block overflow-x-auto border" style="border-color: var(--line);">
                     <table class="min-w-full divide-y" style="border-color: var(--line);">
                         <thead style="background: var(--paper);">
                             <tr>
@@ -153,13 +155,10 @@
                                         <!-- If booking is accepted, show direct Chat Button -->
                                         @if($booking->status == 'accepted')
                                             @php
-                                                // Securely retrieve conversation ID dynamically
                                                 $conv = \App\Models\Conversation::where('student_id', Auth::id())
                                                     ->where('tutor_id', $booking->tutor_id)
                                                     ->first();
                                             @endphp
-                                           <!-- If booking is accepted, show direct Chat Button -->
-                                        @if($booking->status == 'accepted')
                                             <a href="{{ route('messages.show', $booking->tutor->username) }}" class="btn-chat text-[10px] font-bold px-2 py-1 ml-3 inline-flex items-center gap-1">
                                                 <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                                     <path d="M4 5h16v11H8l-4 4V5Z" stroke-linejoin="round"/>
@@ -167,9 +166,7 @@
                                                 Chat
                                             </a>
                                         @endif
-                                        @endif
                                     </td>
-
 
                                     <td class="px-6 py-4 whitespace-nowrap text-gray-500">
                                         {{ \Carbon\Carbon::parse($booking->session_date)->format('M d, Y') }} at
@@ -195,6 +192,63 @@
                         </tbody>
                     </table>
                 </div>
+
+                <!-- MOBILE VIEW: RE-DESIGNED CARDS -->
+                <div class="block sm:hidden space-y-4">
+                    @foreach($bookings as $booking)
+                        <div class="p-4 border bg-white flex flex-col justify-between" style="border-color: var(--line);">
+                            <!-- Top Header: Name & Status -->
+                            <div class="flex justify-between items-start gap-2 mb-3">
+                                <div>
+                                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block">Tutor</span>
+                                    <h4 class="font-bold text-gray-900 text-sm mt-0.5">
+                                        {{ $booking->tutor->first_name }} {{ $booking->tutor->last_name }}
+                                    </h4>
+                                </div>
+                                <div>
+                                    @if($booking->status == 'pending')
+                                        <span class="status-chip status-pending">
+                                            {{ $booking->status }}
+                                        </span>
+                                    @elseif($booking->status == 'accepted')
+                                        <span class="status-chip status-accepted">
+                                            {{ $booking->status }}
+                                        </span>
+                                    @else
+                                        <span class="status-chip status-other">
+                                            {{ $booking->status }}
+                                        </span>
+                                    @endif
+                                </div>
+                            </div>
+
+                            <!-- Date and Time block details -->
+                            <div class="text-xs text-gray-700 bg-[#f5f4f1] border border-gray-100 p-2.5 flex items-center gap-2 mb-3">
+                                <svg class="w-3.5 h-3.5 text-[#1350e0]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="5" width="18" height="16" rx="0.5"/>
+                                    <path d="M3 10H21" stroke-linecap="round"/>
+                                </svg>
+                                <span>
+                                    {{ \Carbon\Carbon::parse($booking->session_date)->format('M d, Y') }} at 
+                                    {{ \Carbon\Carbon::parse($booking->start_time)->format('g:i A') }}
+                                </span>
+                            </div>
+
+                            <!-- Accepted Chat button link -->
+                            @if($booking->status == 'accepted')
+                                <div class="border-t border-gray-100 pt-3 mt-1 flex justify-end">
+                                    <a href="{{ route('messages.show', $booking->tutor->username) }}" class="btn-chat text-xs font-bold py-2 px-4 inline-flex items-center gap-2 w-full justify-center">
+                                        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M4 5h16v11H8l-4 4V5Z" stroke-linejoin="round"/>
+                                        </svg>
+                                        Chat with Tutor
+                                    </a>
+                                </div>
+                            @endif
+                        </div>
+                    @endforeach
+                </div>
+
             @else
                 <div class="text-center py-10" style="background: var(--paper); border: 1px dashed var(--line);">
                     <p class="text-gray-500 text-sm">You haven't booked any tutoring sessions yet.</p>
