@@ -35,7 +35,7 @@ class AuthController extends Controller
             'middle_name'   => 'nullable|string|max:255',
             'last_name'     => 'required|string|max:255',
             'email'         => 'required|string|email|max:255|unique:users,email',
-            'phone_number'  => 'required|string|max:20|unique:users,phone_number',
+            'phone_number'  => 'required|string|max:15|unique:users,phone_number',
             'username'      => 'required|string|min:5|max:16|unique:users,username',
             'password'      => ['required','string','min:8','confirmed',
                    Password::min(8)
@@ -245,7 +245,7 @@ class AuthController extends Controller
             'middle_name'   => 'nullable|string|max:255',
             'last_name'     => 'required|string|max:255',
             'email'         => 'required|string|email|max:255|unique:users,email',
-            'phone_number'  => 'required|string|max:20|unique:users,phone_number',
+            'phone_number'  => 'required|string|max:15|unique:users,phone_number',
             'username'      => 'required|string|min:5|max:16|unique:users,username',
             'password'      => [
                 'required',

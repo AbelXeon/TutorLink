@@ -1,59 +1,213 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+<div align="center">
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+<img src="./assets/banner.svg" alt="TutorLink banner" width="100%" />
 
-## About Laravel
+<br/>
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+[![PHP](https://img.shields.io/badge/PHP-8.x-777BB4?style=flat-square&logo=php&logoColor=white)](https://www.php.net/)
+[![Laravel](https://img.shields.io/badge/Laravel-10.x-FF2D20?style=flat-square&logo=laravel&logoColor=white)](https://laravel.com/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.x-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
+[![Vite](https://img.shields.io/badge/Vite-Build-646CFF?style=flat-square&logo=vite&logoColor=white)](https://vitejs.dev/)
+[![MySQL](https://img.shields.io/badge/MySQL-Database-4479A1?style=flat-square&logo=mysql&logoColor=white)](https://www.mysql.com/)
+[![License](https://img.shields.io/badge/License-MIT-black?style=flat-square)](#license)
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+</div>
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+<br/>
 
-## Learning Laravel
+## About TutorLink
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+In most communities, finding a tutor still works the same way it did decades ago: a parent asks a neighbor, a neighbor asks a friend, and eventually someone knows "a guy who teaches math." There's no way to compare qualifications, see real availability, check pricing up front, or read what other parents and students actually thought of that tutor. It's slow, it's limited to whoever happens to be in your immediate circle, and it leaves a lot of good tutors undiscovered.
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+**TutorLink replaces that word-of-mouth chain with an open, searchable marketplace.**
 
-## Laravel Sponsors
+- **Learners** — whether that's a parent booking lessons for their child, or an adult picking up a new subject or skill for themselves — can search verified tutors by subject, category, city, sub-city, and teaching mode (online, in-person, or hybrid), then book a lesson directly against a tutor's real weekly availability.
+- **Tutors** — anyone with expertise to teach, academic or technical — can build a public profile, set their own hourly rate, define their availability, and start receiving booking requests, without needing to already know their students.
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+The platform handles the entire relationship end-to-end: discovery, booking, scheduling, in-app messaging, and post-lesson reviews — so trust is built on verified profiles and real feedback, not just who happens to live nearby.
 
-### Premium Partners
+---
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+## Table of Contents
+
+- [Key Features](#key-features)
+- [Tech Stack](#tech-stack)
+- [Getting Started](#getting-started)
+- [Project Structure](#project-structure)
+- [Design System](#design-system)
+- [Roadmap](#roadmap)
+- [Contributing](#contributing)
+- [License](#license)
+- [Contact](#contact)
+
+---
+
+## Key Features
+
+### For Students / Learners
+- Account registration with email verification (6-digit code, resend cooldown)
+- Search and filter tutors by city, sub-city, category, subject, and teaching mode
+- Detailed tutor profiles: qualifications, experience, rate, weekly schedule, and student reviews
+- Interactive booking flow — pick an available day from a live calendar, then a specific open time slot
+- Direct, real-time messaging with a booked tutor, including image, document, and live-location sharing
+- Leave a star rating and written review after a completed lesson
+
+### For Tutors
+- Guided profile setup: qualification, experience, hourly rate, teaching mode, max students per session
+- Category and subject selection, grade levels taught, and a dynamic weekly availability builder
+- Dashboard with pending booking requests (accept/decline), active students, and schedule overview
+- Profile editing with a limited number of edits per day to encourage accurate, stable listings
+- Direct messaging with students once a booking is accepted
+
+### Platform-Wide
+- Secure authentication (login, registration, email verification) with CSRF protection throughout
+- Real-time notification system with unread counts, sound alerts, and a live-updating dropdown
+- Account settings modal: change username or password via a verified-email, code-based flow
+- Fully responsive, mobile-first layout — from the landing page down to the in-app chat window
+- Consistent, minimal visual design system (see [Design System](#design-system))
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Backend | PHP / Laravel |
+| Frontend Templating | Laravel Blade |
+| Styling | Tailwind CSS |
+| Build Tooling | Vite |
+| Database | MySQL |
+| Real-time UX | Polling-based live messaging & notifications (AJAX / Fetch API) |
+| Fonts | Bebas Neue (display), Inter (body) |
+
+---
+
+## Getting Started
+
+### Prerequisites
+- PHP 8.1+
+- Composer
+- Node.js & npm
+- MySQL (or another Laravel-supported database)
+
+### Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/your-org/tutorlink.git
+cd tutorlink
+
+# Install PHP dependencies
+composer install
+
+# Install frontend dependencies
+npm install
+
+# Set up your environment file
+cp .env.example .env
+php artisan key:generate
+```
+
+Update `.env` with your database credentials, then run the migrations:
+
+```bash
+php artisan migrate --seed
+```
+
+### Running Locally
+
+```bash
+# Terminal 1 — compile and watch frontend assets
+npm run dev
+
+# Terminal 2 — serve the application
+php artisan serve
+```
+
+For a production build:
+
+```bash
+npm run build
+```
+
+---
+
+## Project Structure
+
+A partial view of the layout, focused on the areas most relevant to day-to-day development:
+
+```
+resources/
+├── views/
+│   ├── Layouts/
+│   │   ├── Layout.blade.php       # Shared app shell: nav, notifications, footer
+│   │   └── Footer.blade.php
+│   ├── Setting/
+│   │   └── Setting.blade.php      # Account settings modal (username/password/logout)
+│   ├── Auth/
+│   │   ├── Login.blade.php
+│   │   ├── Student_Register.blade.php
+│   │   └── Teacher_Register.blade.php
+│   ├── Tutor/
+│   │   ├── ProfileSetup.blade.php
+│   │   ├── ProfileEdit.blade.php
+│   │   ├── Dashboard.blade.php
+│   │   └── Profile.blade.php      # Public tutor profile + booking modal
+│   ├── Student/
+│   │   └── Dashboard.blade.php
+│   └── Messages/
+│       └── Inbox.blade.php        # Real-time chat, attachments, geolocation
+├── css/
+└── js/
+```
+
+---
+
+## Design System
+
+TutorLink uses a deliberately minimal, Swiss-inspired visual language across every page:
+
+- **Palette** — ink black, off-white paper, and a single confident blue accent; no gradients, no decorative color for its own sake
+- **Typography** — Bebas Neue for headlines and labels, Inter for body copy and UI text
+- **Shape language** — flat, square edges throughout (no rounded corners), hairline borders instead of drop shadows
+- **Iconography** — custom line icons everywhere instead of emoji, for a consistent, professional feel across languages and platforms
+- **Layout** — generous whitespace, clear grids, and a recurring half-cropped ring motif as a subtle brand signature
+
+---
+
+## Roadmap
+
+- [ ] Payment integration for lesson fees
+- [ ] Video call integration for online sessions
+- [ ] Admin moderation dashboard for tutor verification
+- [ ] Multi-language support (Amharic / English)
+- [ ] Push notifications (mobile)
+
+---
 
 ## Contributing
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+Contributions, issues, and feature requests are welcome. If you'd like to contribute:
 
-## Code of Conduct
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/your-feature`)
+3. Commit your changes
+4. Open a pull request describing what you changed and why
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+---
 
 ## License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+This project is licensed under the MIT License — see the `LICENSE` file for details, or update this section if you intend to keep the project closed-source.
+
+---
+
+## Contact
+
+For questions, support, or partnership inquiries: **support@tutorlink.com**
+
+<br/>
+
+<div align="center">
+<sub>Built to make finding — and becoming — a tutor as easy as it should have always been.</sub>
+</div>

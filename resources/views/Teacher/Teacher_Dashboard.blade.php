@@ -4,10 +4,6 @@
 
 @section('content')
 
-<!-- Self-contained fonts + scoped styles so this section looks consistent no
-     matter what Layouts.Layout does or doesn't load. Ideally these font links
-     would live once in Layouts.Layout's <head> instead of being repeated per
-     page — flagged for you, but harmless as-is. -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">

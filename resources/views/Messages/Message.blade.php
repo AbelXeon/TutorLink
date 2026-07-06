@@ -3,34 +3,109 @@
 @section('title', 'Inbox - TutorLink')
 
 @section('content')
-<div class="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden flex h-[calc(100vh-10rem)] relative">
+
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap');
+
+    :root{
+        --ink:#0a0a0a;
+        --paper:#f5f4f1;
+        --white:#ffffff;
+        --blue:#1350e0;
+        --blue-dark:#0d3aa8;
+        --line: rgba(10,10,10,0.14);
+    }
+    .inbox-wrap { font-family: 'Inter', sans-serif; overflow-x: hidden; }
+    .display-font {
+        font-family: 'Bebas Neue', sans-serif;
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+    }
+    .swiss-panel { border-radius: 0; border: 1px solid var(--line); box-shadow: none; }
+    .avatar-flat {
+        background: var(--paper);
+        color: var(--ink);
+        border: 1px solid var(--line);
+    }
+    .convo-link { transition: background-color .15s ease; }
+    .convo-link:hover { background: var(--paper); }
+    .convo-active { border-left: 3px solid var(--blue); background: rgba(19,80,224,0.05); }
+    .convo-inactive { border-left: 3px solid transparent; }
+
+    .msg-bubble-me { background: var(--blue); color: var(--white); border-radius: 0; }
+    .msg-bubble-other { background: var(--white); color: var(--ink); border: 1px solid var(--line); border-radius: 0; }
+
+    .icon-btn-flat {
+        border-radius: 0;
+        background: var(--paper);
+        border: 1px solid var(--line);
+        color: #6b6b6b;
+        transition: background-color .15s ease, color .15s ease;
+    }
+    .icon-btn-flat:hover { background: var(--white); color: var(--blue); }
+    .icon-btn-flat.is-active { background: var(--blue); color: var(--white); border-color: var(--blue); }
+
+    .chat-input-flat {
+        border-radius: 0;
+        border: 1px solid var(--line);
+    }
+    .chat-input-flat:focus { outline: none; border-color: var(--ink); box-shadow: none; }
+
+    .btn-send-flat {
+        border-radius: 0;
+        background: var(--ink);
+        color: var(--white);
+        transition: background-color .15s ease;
+    }
+    .btn-send-flat:hover { background: var(--blue); }
+    .btn-send-flat:disabled { opacity: 0.5; }
+
+    .map-pin-tag { color: var(--blue); }
+
+    @media (max-width: 767px) {
+        .inbox-shell { height: calc(100vh - 8rem) !important; }
+    }
+    @media (max-width: 380px) {
+        .icon-btn-flat { padding: 0.4rem !important; }
+        .icon-btn-flat svg { height: 1.1rem; width: 1.1rem; }
+        .btn-send-flat { padding: 0.4rem !important; }
+        .btn-send-flat svg { height: 1.1rem; width: 1.1rem; }
+    }
+</style>
+
+<div class="inbox-wrap">
+<div class="inbox-shell swiss-panel bg-white overflow-hidden flex h-[calc(100vh-10rem)] relative">
 
     <!-- LEFT SIDEBAR: ACTIVE CONVERSATIONS LIST -->
-    <div class="w-1/3 border-r border-gray-200 flex flex-col">
+    <!-- Mobile: full width when no chat is open, hidden once a chat is active.
+         Desktop (md+): always visible at 1/3 width, exactly as before. -->
+    <div class="{{ isset($activeConversation) ? 'hidden md:flex' : 'flex' }} w-full md:w-1/3 border-r flex-col" style="border-color: var(--line);">
         <!-- UPDATED: Dynamic Sidebar Header with Go Home Arrow Redirection -->
-        <div class="p-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
-            <h3 class="text-sm font-bold text-gray-900 uppercase tracking-wider">Conversations</h3>
+        <div class="p-4 border-b flex justify-between items-center" style="border-color: var(--line); background: var(--paper);">
+            <h3 class="text-sm display-font text-gray-900">Conversations</h3>
 
             @if(strtolower(Auth::user()->role?->role_type) === 'teacher')
-                <a href="{{ route('tutor.dashboard') }}" class="text-xs font-semibold text-indigo-600 hover:text-indigo-500 flex items-center gap-1 transition">
-                    &larr; Dashboard
+                <a href="{{ route('tutor.dashboard') }}" class="text-xs font-semibold flex items-center gap-1 transition" style="color: var(--blue);">
+                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6L9 12L15 18" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    Dashboard
                 </a>
             @else
-                <a href="{{ route('student.dashboard') }}" class="text-xs font-semibold text-indigo-600 hover:text-indigo-500 flex items-center gap-1 transition">
-                    &larr; Dashboard
+                <a href="{{ route('student.dashboard') }}" class="text-xs font-semibold flex items-center gap-1 transition" style="color: var(--blue);">
+                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6L9 12L15 18" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    Dashboard
                 </a>
             @endif
         </div>
 
-        <div class="flex-grow overflow-y-auto divide-y divide-gray-100">
+        <div class="flex-grow overflow-y-auto divide-y" style="border-color: var(--line);">
             @forelse($conversations as $conv)
                 @php
                     $otherUser = (Auth::id() === $conv->student_id) ? $conv->tutor : $conv->student;
                     $lastMessage = $conv->messages->first();
                 @endphp
-                <a href="{{ route('messages.show', $otherUser->username) }}" class="flex items-center gap-3 p-4 hover:bg-gray-50 transition {{ isset($activeConversation) && $activeConversation->id === $conv->id ? 'bg-indigo-50' : '' }}">
+                <a href="{{ route('messages.show', $otherUser->username) }}" class="convo-link {{ isset($activeConversation) && $activeConversation->id === $conv->id ? 'convo-active' : 'convo-inactive' }} flex items-center gap-3 p-4">
 
-                    <div class="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center font-bold text-indigo-600 flex-shrink-0">
+                    <div class="avatar-flat w-10 h-10 rounded-full flex items-center justify-center font-bold flex-shrink-0">
                         {{ substr($otherUser->first_name, 0, 1) }}
                     </div>
 
@@ -57,33 +132,39 @@
     </div>
 
     <!-- RIGHT MAIN AREA: ACTIVE CHAT CONTAINER -->
-    <div class="w-2/3 flex flex-col bg-gray-50">
+    <!-- Mobile: hidden until a chat is opened, then takes the full width with a
+         back-to-list link. Desktop (md+): always visible at 2/3 width. -->
+    <div class="{{ isset($activeConversation) ? 'flex' : 'hidden md:flex' }} w-full md:w-2/3 flex-col" style="background: var(--paper);">
         @if(isset($activeConversation))
             @php
                 $chatPartner = (Auth::id() === $activeConversation->student_id) ? $activeConversation->tutor : $activeConversation->student;
             @endphp
 
             <!-- Chat Partner Header -->
-            <div class="bg-white p-4 border-b border-gray-200 flex items-center gap-3 shadow-sm z-10">
-                <div class="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center font-bold text-indigo-600">
+            <div class="bg-white p-4 border-b flex items-center gap-3 z-10" style="border-color: var(--line);">
+                <!-- Mobile-only back button to return to the conversation list -->
+                <a href="{{ route('messages.index') }}" class="md:hidden text-gray-500 hover:text-gray-800 -ml-1 p-1">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6L9 12L15 18" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </a>
+                <div class="avatar-flat w-10 h-10 rounded-full flex items-center justify-center font-bold">
                     {{ substr($chatPartner->first_name, 0, 1) }}
                 </div>
                 <div>
                     <h4 class="text-sm font-bold text-gray-900">{{ $chatPartner->first_name }} {{ $chatPartner->last_name }}</h4>
-                    <span class="text-xs text-green-500 font-semibold flex items-center gap-1">
+                    <span class="text-xs text-green-600 font-semibold flex items-center gap-1">
                         <span class="h-2 w-2 rounded-full bg-green-500 animate-pulse"></span> Active Now
                     </span>
                 </div>
             </div>
 
             <!-- Messages Window (Scrollable) -->
-            <div id="messages_window" class="flex-grow p-6 overflow-y-auto space-y-4">
+            <div id="messages_window" class="flex-grow p-4 sm:p-6 overflow-y-auto space-y-4">
                 @foreach($activeConversation->messages as $msg)
                     @php
                         $isMe = ($msg->sender_id === Auth::id());
                     @endphp
                     <div class="flex {{ $isMe ? 'justify-end' : 'justify-start' }} last-message-marker" data-id="{{ $msg->id }}">
-                        <div class="max-w-[70%] rounded-lg p-3 shadow-sm text-sm {{ $isMe ? 'bg-indigo-600 text-white rounded-br-none' : 'bg-white text-gray-900 rounded-bl-none' }}">
+                        <div class="max-w-[85%] sm:max-w-[70%] p-3 text-sm {{ $isMe ? 'msg-bubble-me' : 'msg-bubble-other' }}">
 
                             @if(!$msg->file_type)
                                 <p>{{ $msg->message_text }}</p>
@@ -91,7 +172,7 @@
                             @elseif($msg->file_type == 'image')
                                 <div class="space-y-1">
                                     <!-- UPDATED: Clicking now runs openImageLightbox() instead of window.open() -->
-                                    <img src="{{ asset('storage/' . $msg->file_path) }}" class="rounded max-h-60 object-cover shadow-sm cursor-pointer" alt="Attachment" onclick="openImageLightbox(this.src)" />
+                                    <img src="{{ asset('storage/' . $msg->file_path) }}" class="max-h-60 object-cover cursor-pointer" alt="Attachment" onclick="openImageLightbox(this.src)" />
                                     @if($msg->message_text) <p class="mt-1">{{ $msg->message_text }}</p> @endif
                                 </div>
 
@@ -99,8 +180,8 @@
                                 <div class="flex items-center gap-2">
                                     <svg class="h-8 w-8 text-red-500" fill="currentColor" viewBox="0 0 20 20"><path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z"/></svg>
                                     <div class="truncate">
-                                        <a href="{{ asset('storage/' . $msg->file_path) }}" download class="font-bold underline hover:text-indigo-200 truncate block">Download Attachment</a>
-                                        <span class="text-[10px] text-gray-400">Secure Document File</span>
+                                        <a href="{{ asset('storage/' . $msg->file_path) }}" download class="font-bold underline truncate block">Download Attachment</a>
+                                        <span class="text-[10px] opacity-70">Secure Document File</span>
                                     </div>
                                 </div>
 
@@ -109,9 +190,10 @@
                                     $coords = explode(',', $msg->message_text);
                                 @endphp
                                 <div class="space-y-2">
-                                    <span class="text-xs font-bold block uppercase tracking-wider text-indigo-200">Shared Location Pin</span>
-                                    <a href="https://www.google.com/maps?q={{ $coords[0] }},{{ $coords[1] }}" target="_blank" class="inline-flex items-center gap-1 bg-white text-indigo-600 font-bold px-3 py-1.5 rounded border border-gray-200 hover:bg-gray-50 transition shadow-sm text-xs">
-                                        📍 View Live Map
+                                    <span class="text-xs font-bold block uppercase tracking-wider opacity-80">Shared Location Pin</span>
+                                    <a href="https://www.google.com/maps?q={{ $coords[0] }},{{ $coords[1] }}" target="_blank" class="inline-flex items-center gap-1.5 bg-white font-bold px-3 py-1.5 border hover:bg-gray-50 transition text-xs" style="color: var(--blue); border-color: var(--line);">
+                                        <svg class="w-3.5 h-3.5 map-pin-tag" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21C12 21 19 14.5 19 9.5C19 5.4 15.9 2 12 2C8.1 2 5 5.4 5 9.5C5 14.5 12 21 12 21Z" stroke-linejoin="round"/><circle cx="12" cy="9.5" r="2.5"/></svg>
+                                        View Live Map
                                     </a>
                                 </div>
                             @endif
@@ -123,12 +205,13 @@
             </div>
 
             <!-- Unified Attachment & Location Preview Box -->
-            <div id="preview_container" class="hidden px-6 py-3 bg-gray-100 border-t border-gray-200 flex items-center justify-between shadow-inner">
+            <div id="preview_container" class="hidden px-4 sm:px-6 py-3 border-t flex items-center justify-between" style="background: var(--white); border-color: var(--line);">
                 <div class="flex items-center gap-3">
-                    <img id="image_preview" src="" class="h-16 w-16 object-cover rounded border border-gray-300 shadow-sm hidden" alt="Preview" />
+                    <img id="image_preview" src="" class="h-16 w-16 object-cover border hidden" style="border-color: var(--line);" alt="Preview" />
 
-                    <div id="location_preview" class="hidden flex items-center gap-2 text-indigo-600 font-bold text-sm">
-                        📍 <span id="location_coords_text"></span>
+                    <div id="location_preview" class="hidden flex items-center gap-2 font-bold text-sm" style="color: var(--blue);">
+                        <svg class="w-4 h-4 map-pin-tag" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21C12 21 19 14.5 19 9.5C19 5.4 15.9 2 12 2C8.1 2 5 5.4 5 9.5C5 14.5 12 21 12 21Z" stroke-linejoin="round"/><circle cx="12" cy="9.5" r="2.5"/></svg>
+                        <span id="location_coords_text"></span>
                     </div>
 
                     <span id="preview_text" class="text-xs text-gray-500 font-medium">Ready to send.</span>
@@ -137,19 +220,19 @@
             </div>
 
             <!-- Message Input & Attachment Submission bar -->
-            <div class="bg-white p-4 border-t border-gray-200 shadow-lg">
-                <form id="chat_form" action="{{ route('messages.store', $activeConversation->id) }}" method="POST" enctype="multipart/form-data" class="flex items-center gap-3">
+            <div class="bg-white p-3 sm:p-4 border-t" style="border-color: var(--line);">
+                <form id="chat_form" action="{{ route('messages.store', $activeConversation->id) }}" method="POST" enctype="multipart/form-data" class="flex items-center gap-2 sm:gap-3">
                     @csrf
 
-                    <label for="attachment" class="p-2 bg-gray-100 hover:bg-gray-200 rounded-full cursor-pointer text-gray-500 hover:text-indigo-600 transition" title="Attach Image or Document">
-                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <label for="attachment" class="icon-btn-flat p-2 cursor-pointer shrink-0" title="Attach Image or Document">
+                        <svg class="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
                         </svg>
                     </label>
                     <input id="attachment" name="attachment" type="file" class="hidden" accept=".jpg,.jpeg,.png,.pdf,.doc,.docx" />
 
-                    <button type="button" id="geo_btn" class="p-2 bg-gray-100 hover:bg-gray-200 rounded-full text-gray-500 hover:text-indigo-600 transition" title="Share Current Location">
-                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <button type="button" id="geo_btn" class="icon-btn-flat p-2 shrink-0" title="Share Current Location">
+                        <svg class="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                         </svg>
@@ -158,10 +241,10 @@
                     <input type="hidden" id="latitude" name="latitude">
                     <input type="hidden" id="longitude" name="longitude">
 
-                    <input id="chat_input" name="message_text" type="text" autocomplete="off" placeholder="Type a message..." class="flex-grow py-2 px-4 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm" />
+                    <input id="chat_input" name="message_text" type="text" autocomplete="off" placeholder="Type a message..." class="chat-input-flat flex-1 min-w-0 py-2 px-3 sm:px-4 text-sm" />
 
-                    <button type="submit" id="submit_send_btn" class="p-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full shadow transition disabled:opacity-50">
-                        <svg class="h-6 w-6 transform rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <button type="submit" id="submit_send_btn" class="btn-send-flat p-2 shrink-0">
+                        <svg class="h-5 w-5 sm:h-6 sm:w-6 transform rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                         </svg>
                     </button>
@@ -202,7 +285,7 @@
                     if (file) {
                         const extension = file.name.split('.').pop().toLowerCase();
                         locationPreview.classList.add('hidden');
-
+                        
                         if (['jpg', 'jpeg', 'png'].includes(extension)) {
                             const reader = new FileReader();
                             reader.onload = function(e) {
@@ -230,7 +313,7 @@
                     previewContainer.classList.add('hidden');
                     imagePreview.src = '';
                     locationPreview.classList.add('hidden');
-                    geoBtn.classList.remove('text-indigo-600');
+                    geoBtn.classList.remove('is-active');
                 });
 
                 // 2. SUBMIT FORM VIA AJAX
@@ -272,7 +355,7 @@
                             lngInput.value = '';
                             chatInput.placeholder = "Type a message...";
                             chatInput.disabled = false;
-                            geoBtn.classList.remove('text-indigo-600');
+                            geoBtn.classList.remove('is-active');
 
                             appendMessageBubble(data.message, true);
                         }
@@ -311,7 +394,7 @@
 
                 function appendMessageBubble(msg, isMe) {
                     if (renderedMessageIds.has(msg.id)) return;
-
+                    
                     renderedMessageIds.add(msg.id);
                     lastMessageId = msg.id;
 
@@ -323,7 +406,7 @@
                     if (!msg.file_type) {
                         msgBody = `<p>${msg.message_text}</p>`;
                     } else if (msg.file_type === 'image') {
-                        msgBody = `<img src="/storage/${msg.file_path}" class="rounded max-h-60 object-cover shadow-sm cursor-pointer" onclick="openImageLightbox(this.src)" />`;
+                        msgBody = `<img src="/storage/${msg.file_path}" class="max-h-60 object-cover cursor-pointer" onclick="openImageLightbox(this.src)" />`;
                         if (msg.message_text) msgBody += `<p class="mt-1">${msg.message_text}</p>`;
                     } else if (msg.file_type === 'document') {
                         msgBody = `
@@ -335,13 +418,16 @@
                     } else if (msg.file_type === 'location') {
                         const coords = msg.message_text.split(',');
                         msgBody = `
-                            <span class="text-xs font-bold block uppercase tracking-wider text-indigo-200">Shared Location Pin</span>
-                            <a href="https://www.google.com/maps?q=${coords[0]},${coords[1]}" target="_blank" class="inline-flex items-center gap-1 bg-white text-indigo-600 font-bold px-3 py-1.5 rounded border border-gray-200 hover:bg-gray-50 transition shadow-sm text-xs">📍 View Live Map</a>
+                            <span class="text-xs font-bold block uppercase tracking-wider opacity-80">Shared Location Pin</span>
+                            <a href="https://www.google.com/maps?q=${coords[0]},${coords[1]}" target="_blank" class="inline-flex items-center gap-1.5 bg-white font-bold px-3 py-1.5 border hover:bg-gray-50 transition text-xs" style="color:#1350e0; border-color: rgba(10,10,10,0.14);">
+                                <svg class="w-3.5 h-3.5" style="color:#1350e0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21C12 21 19 14.5 19 9.5C19 5.4 15.9 2 12 2C8.1 2 5 5.4 5 9.5C5 14.5 12 21 12 21Z" stroke-linejoin="round"/><circle cx="12" cy="9.5" r="2.5"/></svg>
+                                View Live Map
+                            </a>
                         `;
                     }
 
                     div.innerHTML = `
-                        <div class="max-w-[70%] rounded-lg p-3 shadow-sm text-sm ${isMe ? 'bg-indigo-600 text-white rounded-br-none' : 'bg-white text-gray-900 rounded-bl-none'}">
+                        <div class="max-w-[85%] sm:max-w-[70%] p-3 text-sm ${isMe ? 'msg-bubble-me' : 'msg-bubble-other'}">
                             ${msgBody}
                             <span class="block text-[10px] text-right mt-1 opacity-70">Just Now</span>
                         </div>
@@ -356,16 +442,16 @@
                 // 4. GPS GEOLOCATION CONTROLLER
                 geoBtn.addEventListener('click', function() {
                     if (navigator.geolocation) {
-                        geoBtn.classList.add('text-indigo-600', 'animate-pulse');
-
+                        geoBtn.classList.add('is-active');
+                        
                         navigator.geolocation.getCurrentPosition(
                             function(position) {
                                 const lat = position.coords.latitude.toFixed(5);
                                 const lng = position.coords.longitude.toFixed(5);
-
+                                
                                 latInput.value = position.coords.latitude;
                                 lngInput.value = position.coords.longitude;
-
+                                
                                 attachmentInput.value = '';
                                 imagePreview.classList.add('hidden');
 
@@ -376,11 +462,10 @@
 
                                 chatInput.placeholder = "Location pinned! Ready to send.";
                                 chatInput.disabled = true;
-                                geoBtn.classList.remove('animate-pulse');
                             },
                             function(error) {
                                 alert("Failed to fetch location. Please check your browser's location permissions.");
-                                geoBtn.classList.remove('text-indigo-600', 'animate-pulse');
+                                geoBtn.classList.remove('is-active');
                             }
                         );
                     } else {
@@ -394,12 +479,13 @@
                 <svg class="h-16 w-16 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                 </svg>
-                <h4 class="mt-4 text-lg font-bold text-gray-900">Your Inbox</h4>
+                <h4 class="mt-4 text-lg display-font text-gray-900">Your Inbox</h4>
                 <p class="text-sm text-gray-500 max-w-sm mt-1">Select an active conversation from the sidebar list to start exchanging messages, attachments, and locations securely.</p>
             </div>
         @endif
     </div>
 
+</div>
 </div>
 
 <!-- NEW: IMAGE LIGHTBOX MODAL (Allows full-screen viewing without leaving the page) -->
@@ -409,7 +495,7 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
         </svg>
     </button>
-    <img id="lightbox_image" src="" class="max-w-full max-h-[90vh] object-contain rounded shadow-lg" alt="Full size image" />
+    <img id="lightbox_image" src="" class="max-w-full max-h-[90vh] object-contain shadow-lg" alt="Full size image" />
 </div>
 
 <script>
