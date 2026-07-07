@@ -74,7 +74,7 @@
     .star-line { color: #d97706; }
     .panel-title { border-bottom: 1px solid var(--line); }
 
-    /* Booking modal + review modal (same visual system as the browse page) */
+    /* Booking modal + review modal */
     .cal-day-available {
         background: rgba(19,80,224,0.06);
         color: var(--blue-dark);
@@ -98,208 +98,270 @@
         background: var(--ink) !important;
         color: var(--white) !important;
     }
-    .star-radio-label { font-size: 1.9rem; color: #d1d5db; transition: color .15s ease; }
-    .star-radio-label:hover { color: #f59e0b; }
-    input.star-radio-input:checked ~ .star-radio-label,
-    .star-radio-input:checked + .star-radio-label { color: #d97706; }
+
+    /* Rating Star Interactivity and Sibling glow */
+    .rating-stars-container {
+        display: flex;
+        flex-direction: row-reverse;
+        justify-content: flex-end;
+    }
+    .star-radio-label {
+        font-size: 2.25rem;
+        color: #d1d5db;
+        transition: color .15s ease;
+    }
+    /* Hover state: highlight hovered star and all stars to its left */
+    .star-radio-label:hover,
+    .star-radio-label:hover ~ .star-radio-label {
+        color: #f59e0b !important;
+    }
+    /* Checked state: highlight selected star and all stars to its left */
+    .star-radio-input:checked ~ .star-radio-label {
+        color: #d97706 !important;
+    }
 
     @media (max-width: 480px) {
-        .profile-header { padding: 1.5rem !important; }
-        .profile-header h2 { font-size: 1.6rem !important; }
+        .profile-header { padding: 1rem !important; }
+        .profile-header h2 { font-size: 1.4rem !important; }
+    }
+
+    /* Desktop Left-Side Fixed Sidebar positioning */
+    @media (min-width: 1024px) {
+        .td-fixed-profile-card {
+            position: fixed;
+            top: 100px; /* Locked below layout topnav header height of 64px */
+            width: 288px; /* w-72 */
+            z-index: 30;
+        }
     }
 </style>
 
-<div class="profile-wrap max-w-4xl mx-auto space-y-6 sm:space-y-8 text-gray-800">
+<div class="profile-wrap max-w-6xl mx-auto text-gray-800">
 
     @if(session('success'))
-        <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3">
+        <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 mb-6">
             {{ session('success') }}
         </div>
     @endif
 
-    <!-- Profile Details Header Card -->
-    <div class="profile-header swiss-panel p-6 sm:p-8 flex flex-col md:flex-row gap-6 sm:gap-8 items-start md:items-center">
+    <!-- GRID SPLIT WRAPPER: Left column (Fixed on PC) vs Right column (Scrollable) -->
+    <div class="flex flex-col lg:flex-row gap-8 items-start relative">
 
-        <!-- Profile Image -->
-        <div class="w-32 h-32 sm:w-36 sm:h-36 md:w-44 md:h-44 flex-shrink-0 relative mx-auto md:mx-0">
-            @if($tutor->user->profile_image)
-                <img src="{{ asset('storage/' . $tutor->user->profile_image) }}" alt="Photo" class="w-full h-full object-cover" style="border: 1px solid var(--line);">
-            @else
-                <div class="w-full h-full flex items-center justify-center text-3xl display-font" style="background: var(--paper); color: var(--ink); border: 1px solid var(--line);">
-                    {{ substr($tutor->user->first_name, 0, 1) }}{{ substr($tutor->user->last_name, 0, 1) }}
+        <!-- LEFT COLUMN: Pinned & Non-scrollable on Desktop -->
+        <aside class="w-full lg:w-72 shrink-0 td-fixed-profile-card">
+
+            <!-- Compact Profile Details Header Card -->
+            <div class="profile-header swiss-panel p-4 sm:p-5 flex flex-col md:flex-row lg:flex-col gap-4 sm:gap-6 items-center text-center md:text-left lg:text-center">
+
+                <!-- Profile Image -->
+                <div class="w-24 h-24 sm:w-28 sm:h-28 flex-shrink-0 relative mx-auto md:mx-0 lg:mx-auto">
+                    @if($tutor->user->profile_image)
+                        <img src="{{ asset('storage/' . $tutor->user->profile_image) }}" alt="Photo" class="w-full h-full object-cover" style="border: 1px solid var(--line);">
+                    @else
+                        <div class="w-full h-full flex items-center justify-center text-2xl display-font" style="background: var(--paper); color: var(--ink); border: 1px solid var(--line);">
+                            {{ substr($tutor->user->first_name, 0, 1) }}{{ substr($tutor->user->last_name, 0, 1) }}
+                        </div>
+                    @endif
+                    <span class="status-dot absolute bottom-0.5 right-0.5 block h-4 w-4 bg-green-500 ring-2 ring-white"></span>
                 </div>
-            @endif
-            <span class="status-dot absolute bottom-1 right-1 block h-5 w-5 bg-green-500 ring-2 ring-white"></span>
-        </div>
 
-        <!-- Info Details -->
-        <div class="flex-grow space-y-4 w-full text-center md:text-left">
-            <div>
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <h2 class="text-2xl sm:text-3xl display-font text-gray-900">
-                        {{ $tutor->user->first_name }} {{ $tutor->user->last_name }}
-                    </h2>
+                <!-- Info Details -->
+                <div class="flex-grow space-y-3 w-full">
+                    <div>
+                        <div class="flex flex-col sm:flex-row lg:flex-col items-center justify-between gap-2">
+                            <h2 class="text-xl sm:text-2xl display-font text-gray-900 leading-tight">
+                                {{ $tutor->user->first_name }} {{ $tutor->user->last_name }}
+                            </h2>
 
-                    <!-- Dynamic rating badge -->
-                    <div class="rating-badge flex items-center gap-1.5 text-sm font-bold px-3.5 py-1 w-fit mx-auto md:mx-0">
-                        <span>{{ number_format($averageRating, 1) }} ★</span>
-                        <span class="text-gray-300">|</span>
-                        <span class="text-xs font-medium" style="color: var(--blue);">{{ $reviews->count() }} reviews</span>
+                            <!-- Dynamic rating badge -->
+                            <div class="rating-badge flex items-center gap-1 text-xs font-bold px-2.5 py-0.5 w-fit">
+                                <span>{{ number_format($averageRating, 1) }} ★</span>
+                                <span class="text-gray-300">|</span>
+                                <span class="text-[10px] font-medium" style="color: var(--blue);">{{ $reviews->count() }} reviews</span>
+                            </div>
+                        </div>
+
+                        <p class="font-semibold text-xs mt-1 text-center md:text-left lg:text-center" style="color: var(--blue);">
+                            Specialty: {{ $tutor->subjects->pluck('name')->implode(', ') }}
+                        </p>
+                    </div>
+
+                    <!-- Compact Metric Columns -->
+                    <div class="metric-box grid grid-cols-2 gap-3 py-3 text-center">
+                        <div>
+                            <span class="text-[10px] text-gray-500 uppercase font-bold block">Rate</span>
+                            <span class="text-sm font-bold text-gray-900">ETB {{ $tutor->price_per_hour }}/hr</span>
+                        </div>
+                        <div>
+                            <span class="text-[10px] text-gray-500 uppercase font-bold block">Experience</span>
+                            <span class="text-sm font-bold text-gray-900">{{ $tutor->experience_years }} Years</span>
+                        </div>
+                        <div>
+                            <span class="text-[10px] text-gray-500 uppercase font-bold block">Qualification</span>
+                            <span class="text-sm font-bold text-gray-900 truncate block px-1" title="{{ $tutor->qualification }}">{{ $tutor->qualification }}</span>
+                        </div>
+                        <div>
+                            <span class="text-[10px] text-gray-500 uppercase font-bold block">Location</span>
+                            <span class="text-sm font-bold text-gray-900 truncate block px-1">{{ $tutor->user->location?->name }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="flex flex-col gap-2 pt-2">
+                        <button type="button"
+                            onclick="openBookingModal('{{ $tutor->user->username }}', '{{ $tutor->user->first_name }} {{ $tutor->user->last_name }}', {{ json_encode($tutor->user->schedules) }})"
+                            class="btn-swiss-accent w-full text-center py-2 px-3 text-xs font-bold text-white">
+                            Book lesson
+                        </button>
+
+                        @if(isset($unreviewedBooking) && $unreviewedBooking)
+                            <button type="button" onclick="openReviewModal()" class="btn-review-outline w-full text-center py-2 px-3 text-xs font-bold inline-flex items-center justify-center gap-1.5">
+                                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3L14.6 9L21 9.8L16.5 14.1L17.6 20.5L12 17.4L6.4 20.5L7.5 14.1L3 9.8L9.4 9L12 3Z" stroke-linejoin="round"/></svg>
+                                Write a Review
+                            </button>
+                        @elseif(isset($canMessage) && $canMessage)
+                            <a href="{{ route('messages.show', $tutor->user->username) }}" class="btn-swiss-outline w-full text-center py-2 px-3 text-xs font-bold">
+                                Send Message
+                            </a>
+                        @else
+                            <button type="button"
+                                onclick="showCustomAlert('Security Restriction: You must book a lesson with {{ $tutor->user->first_name }} and have it accepted before you can message them.')"
+                                class="btn-disabled-flat w-full text-center py-2 px-3 text-xs font-bold">
+                                Send Message
+                            </button>
+                        @endif
                     </div>
                 </div>
+            </div>
 
-                <p class="font-semibold text-sm mt-1" style="color: var(--blue);">
-                    Specialty: {{ $tutor->subjects->pluck('name')->implode(', ') }}
+        </aside>
+
+        <!-- INVISIBLE GRID SPACER FOR DESKTOP ALIGNMENT -->
+        <div class="hidden lg:block w-72 shrink-0"></div>
+
+        <!-- RIGHT COLUMN: Scrollable Content on Desktop -->
+        <div class="flex-grow w-full space-y-6 sm:space-y-8">
+
+            <!-- Teaching Overview -->
+            <div class="swiss-panel p-6 sm:p-8">
+                <h3 class="text-lg display-font text-gray-955 mb-4 panel-title pb-3">Teaching Information</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 text-sm">
+                    <div>
+                        <ul class="space-y-3">
+                            <li><strong class="text-gray-900 font-semibold">Highest Qualification:</strong> {{ $tutor->qualification }}</li>
+                            <li><strong class="text-gray-900 font-semibold">Experience Years:</strong> {{ $tutor->experience_years }} Years</li>
+                            <li><strong class="text-gray-900 font-semibold">Teaching Mode:</strong> <span class="capitalize">{{ $tutor->teaching_mode }}</span></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <ul class="space-y-3">
+                            <li><strong class="text-gray-900 font-semibold">Max Students Per Session:</strong> {{ $tutor->max_students }}</li>
+                            <li><strong class="text-gray-900 font-semibold">Hourly Rate:</strong> <span class="font-bold" style="color: var(--blue);">{{ number_format($tutor->price_per_hour, 2) }} ETB/hr</span></li>
+                            <li><strong class="text-gray-900 font-semibold">District / Sub-City:</strong> {{ $tutor->user->address }}</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- About Me Section -->
+            <div class="swiss-panel p-6 sm:p-8">
+                <h3 class="text-lg display-font text-gray-900 mb-4 panel-title pb-3">About Me</h3>
+                <p class="text-gray-700 leading-relaxed text-sm whitespace-pre-line p-6" style="background: var(--paper); border: 1px solid var(--line);">
+                    {{ $tutor->bio }}
                 </p>
             </div>
 
-            <!-- Your exact metric columns -->
-            <div class="metric-box grid grid-cols-2 md:grid-cols-4 gap-4 py-4 text-center">
-                <div>
-                    <span class="text-xs text-gray-500 uppercase font-bold block">Rate</span>
-                    <span class="text-lg font-bold text-gray-900">ETB {{ $tutor->price_per_hour }}/hr</span>
-                </div>
-                <div>
-                    <span class="text-xs text-gray-500 uppercase font-bold block">Experience</span>
-                    <span class="text-lg font-bold text-gray-900">{{ $tutor->experience_years }} Years</span>
-                </div>
-                <div>
-                    <span class="text-xs text-gray-500 uppercase font-bold block">Qualification</span>
-                    <span class="text-lg font-bold text-gray-900 truncate block" title="{{ $tutor->qualification }}">{{ $tutor->qualification }}</span>
-                </div>
-                <div>
-                    <span class="text-xs text-gray-500 uppercase font-bold block">Location</span>
-                    <span class="text-lg font-bold text-gray-900">{{ $tutor->user->location?->name }}</span>
-                </div>
+            <!-- Weekly Schedule Card -->
+            <div class="swiss-panel p-6 sm:p-8">
+                <h3 class="text-lg display-font text-gray-900 mb-4 panel-title pb-3">Weekly Availability</h3>
+
+                @if($tutor->user->schedules->count() > 0)
+                    <div class="space-y-3 mt-4">
+                        @foreach($tutor->user->schedules as $sched)
+                            <div class="flex items-center justify-between p-3 border" style="border-color: var(--line); background: var(--white);">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 flex flex-col items-center justify-center border" style="background: var(--paper); border-color: var(--line);">
+                                        <span class="text-[10px] font-extrabold text-gray-400 uppercase leading-none">{{ substr($sched->day_of_week, 0, 3) }}</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-sm font-bold text-gray-900">{{ $sched->day_of_week }}</span>
+                                        <span class="block text-[10px] text-gray-400 font-bold uppercase tracking-wider">Timeslot</span>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <span class="text-xs font-bold text-[#1350e0] bg-blue-50/80 px-2.5 py-1">
+                                        {{ \Carbon\Carbon::parse($sched->start_time)->format('g:i A') }} - {{ \Carbon\Carbon::parse($sched->end_time)->format('g:i A') }}
+                                    </span>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                @else
+                    <p class="text-sm text-gray-500 italic">No timeslots configured by this tutor.</p>
+                @endif
             </div>
 
-            <!-- Action Buttons -->
-            <div class="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-2">
-                <!-- Trigger interactive booking modal dynamically -->
-                <button type="button"
-                    onclick="openBookingModal('{{ $tutor->user->username }}', '{{ $tutor->user->first_name }} {{ $tutor->user->last_name }}', {{ json_encode($tutor->user->schedules) }})"
-                    class="btn-swiss-accent w-full text-center py-2.5 px-3 text-xs font-bold text-white">
-                    Book lesson
-                </button>
+            <!-- Student Reviews List Card -->
+            <div class="swiss-panel p-6 sm:p-8">
+                <h3 class="text-lg display-font text-gray-900 mb-6 panel-title pb-3">Student Reviews</h3>
 
-                <!-- Conditionally render Review or Message Button -->
-                @if(isset($unreviewedBooking) && $unreviewedBooking)
-                    <button type="button" onclick="openReviewModal()" class="btn-review-outline w-full text-center py-2.5 px-3 text-xs font-bold inline-flex items-center justify-center gap-1.5">
-                        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3L14.6 9L21 9.8L16.5 14.1L17.6 20.5L12 17.4L6.4 20.5L7.5 14.1L3 9.8L9.4 9L12 3Z" stroke-linejoin="round"/></svg>
-                        Write a Review
-                    </button>
-                @elseif(isset($canMessage) && $canMessage)
-                    <!-- Direct Chat Link (Only for students with accepted bookings) -->
-                    <a href="{{ route('messages.show', $tutor->user->username) }}" class="btn-swiss-outline w-full text-center py-2.5 px-3 text-xs font-bold">
-                        Send Message
-                    </a>
+                @if($reviews->count() > 0)
+                    <div class="space-y-6 mt-4">
+                        @foreach($reviews as $review)
+                            <div class="pb-6 last:pb-0 border-b last:border-0" style="border-color: var(--line);">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm" style="background: var(--paper); border: 1px solid var(--line); color: var(--ink);">
+                                            {{ substr($review->first_name, 0, 1) }}
+                                        </div>
+                                        <div>
+                                            <h4 class="text-sm font-bold text-gray-900">{{ $review->first_name }} {{ $review->last_name }}</h4>
+                                            <span class="text-[10px] text-gray-400 font-semibold">{{ \Carbon\Carbon::parse($review->created_at)->diffForHumans() }}</span>
+                                        </div>
+                                    </div>
+                                    <div class="star-line font-bold text-sm">
+                                        {{ str_repeat('★', $review->rating) }}{{ str_repeat('☆', 5 - $review->rating) }}
+                                    </div>
+                                </div>
+                                <p class="mt-3 text-sm text-gray-600 leading-relaxed p-4" style="background: var(--paper); border: 1px solid var(--line);">
+                                    "{!! nl2br(e($review->comment)) !!}"
+                                </p>
+                            </div>
+                        @endforeach
+                    </div>
                 @else
-                    <!-- Front-End Interactive Booking Warning Alert -->
-                    <button type="button"
-                        onclick="alert('Security Restriction: You must book a lesson with {{ $tutor->user->first_name }} and have it accepted before you can message them.')"
-                        class="btn-disabled-flat w-full text-center py-2.5 px-3 text-xs font-bold">
-                        Send Message
-                    </button>
+                    <p class="text-sm text-gray-500 italic text-center py-6">No reviews received yet.</p>
                 @endif
             </div>
         </div>
+
     </div>
-
-    <!-- Teaching Overview -->
-    <div class="swiss-panel p-6 sm:p-8">
-        <h3 class="text-lg display-font text-gray-950 mb-4 panel-title pb-3">Teaching Information</h3>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 text-sm">
-            <div>
-                <ul class="space-y-3">
-                    <li><strong class="text-gray-900 font-semibold">Highest Qualification:</strong> {{ $tutor->qualification }}</li>
-                    <li><strong class="text-gray-900 font-semibold">Experience Years:</strong> {{ $tutor->experience_years }} Years</li>
-                    <li><strong class="text-gray-900 font-semibold">Teaching Mode:</strong> <span class="capitalize">{{ $tutor->teaching_mode }}</span></li>
-                </ul>
-            </div>
-            <div>
-                <ul class="space-y-3">
-                    <li><strong class="text-gray-900 font-semibold">Max Students Per Session:</strong> {{ $tutor->max_students }}</li>
-                    <li><strong class="text-gray-900 font-semibold">Hourly Rate:</strong> <span class="font-bold" style="color: var(--blue);">{{ number_format($tutor->price_per_hour, 2) }} ETB/hr</span></li>
-                    <li><strong class="text-gray-900 font-semibold">District / Sub-City:</strong> {{ $tutor->user->address }}</li>
-                </ul>
-            </div>
-        </div>
-    </div>
-
-    <!-- About Me Section -->
-    <div class="swiss-panel p-6 sm:p-8">
-        <h3 class="text-lg display-font text-gray-900 mb-4 panel-title pb-3">About Me</h3>
-        <p class="text-gray-700 leading-relaxed text-sm whitespace-pre-line p-6" style="background: var(--paper); border: 1px solid var(--line);">
-            {{ $tutor->bio }}
-        </p>
-    </div>
-
-    <!-- Weekly Schedule Section -->
-    <div class="swiss-panel p-6 sm:p-8">
-        <h3 class="text-lg display-font text-gray-900 mb-4 panel-title pb-3">Weekly Availability Schedule</h3>
-
-        @if($tutor->user->schedules->count() > 0)
-            <div class="overflow-x-auto border" style="border-color: var(--line);">
-                <table class="min-w-full divide-y" style="border-color: var(--line);">
-                    <thead style="background: var(--paper);">
-                        <tr>
-                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Day</th>
-                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Start Time</th>
-                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">End Time</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y bg-white text-sm text-gray-700" style="border-color: var(--line);">
-                        @foreach($tutor->user->schedules as $sched)
-                            <tr>
-                                <td class="px-6 py-4 whitespace-nowrap font-semibold text-gray-900">{{ $sched->day_of_week }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap">{{ \Carbon\Carbon::parse($sched->start_time)->format('g:i A') }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap">{{ \Carbon\Carbon::parse($sched->end_time)->format('g:i A') }}</td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-        @else
-            <p class="text-sm text-gray-500 italic">No available timeslots configured by this tutor.</p>
-        @endif
-    </div>
-
-    <!-- Student Reviews List Card -->
-    <div class="swiss-panel p-6 sm:p-8">
-        <h3 class="text-lg display-font text-gray-900 mb-6 panel-title pb-3">Student Reviews</h3>
-
-        @if($reviews->count() > 0)
-            <div class="space-y-6">
-                @foreach($reviews as $review)
-                    <div class="pb-6 last:pb-0" style="border-bottom: 1px solid var(--line);">
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center space-x-3">
-                                <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm" style="background: var(--paper); border: 1px solid var(--line); color: var(--ink);">
-                                    {{ substr($review->first_name, 0, 1) }}
-                                </div>
-                                <div>
-                                    <h4 class="text-sm font-bold text-gray-900">{{ $review->first_name }} {{ $review->last_name }}</h4>
-                                    <span class="text-[10px] text-gray-400 font-semibold">{{ \Carbon\Carbon::parse($review->created_at)->diffForHumans() }}</span>
-                                </div>
-                            </div>
-                            <div class="star-line font-bold text-sm">
-                                {{ str_repeat('★', $review->rating) }}{{ str_repeat('☆', 5 - $review->rating) }}
-                            </div>
-                        </div>
-                        <p class="mt-3 text-sm text-gray-600 leading-relaxed p-4" style="background: var(--paper); border: 1px solid var(--line);">
-                            "{{ $review->comment }}"
-                        </p>
-                    </div>
-                @endforeach
-            </div>
-        @else
-            <p class="text-sm text-gray-500 italic text-center py-6">No reviews received yet. Be the first to book a session and leave feedback!</p>
-        @endif
-    </div>
-
 </div>
 
-<!-- INTERACTIVE BOOKING MODAL (Blurred backdrop overlay) -->
+<!-- CUSTOM ALERTS POPUP MODAL (REPLACES BROWSER POPUPS) -->
+<div id="custom-alert-modal" class="hidden fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-black bg-opacity-50 backdrop-blur-sm select-none transition duration-300">
+    <div class="swiss-panel bg-white w-full max-w-sm p-6 relative border-t-4 border-amber-500">
+        <button type="button" onclick="closeCustomAlert()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-700 focus:outline-none">
+            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+        </button>
+        <div class="flex items-start gap-3">
+            <div class="p-2 bg-amber-50 text-amber-600 flex-shrink-0">
+                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667(1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+            </div>
+            <div>
+                <h3 class="text-sm font-bold text-gray-900 uppercase tracking-wider">System Alert</h3>
+                <p id="custom-alert-message" class="text-xs text-gray-600 mt-2 leading-relaxed"></p>
+            </div>
+        </div>
+        <div class="mt-6 flex justify-end">
+            <button type="button" onclick="closeCustomAlert()" class="btn-swiss-primary px-4 py-1.5 text-xs font-bold text-white">Got it</button>
+        </div>
+    </div>
+</div>
+
+<!-- INTERACTIVE BOOKING MODAL -->
 <div id="booking_modal" class="hidden fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-black bg-opacity-50 backdrop-blur-sm select-none transition duration-300">
     <div class="swiss-panel bg-white w-full max-w-xl p-6 sm:p-8 relative">
         <button type="button" id="close_booking_modal" class="absolute top-4 right-4 text-gray-400 hover:text-gray-700 focus:outline-none">
@@ -358,7 +420,7 @@
     </div>
 </div>
 
-<!-- INTERACTIVE RATING MODAL (Blurred backdrop overlay) -->
+<!-- INTERACTIVE RATING MODAL -->
 @if(isset($unreviewedBooking) && $unreviewedBooking)
 <div id="review_modal" class="hidden fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-black bg-opacity-50 backdrop-blur-sm transition duration-300">
     <div class="swiss-panel bg-white w-full max-w-md p-6 sm:p-8 relative">
@@ -374,16 +436,24 @@
         <form action="{{ route('bookings.review.store', $unreviewedBooking->id) }}" method="POST" class="space-y-6">
             @csrf
 
-            <!-- Secure Star Selector (Interactive styling via label focus triggers) -->
+            <!-- Sibling-Aware Star Selector -->
             <div>
                 <label class="block text-sm font-bold text-gray-700 uppercase tracking-wider mb-2">Your Rating</label>
-                <div class="flex items-center gap-2">
-                    @for($i = 1; $i <= 5; $i++)
-                        <label class="cursor-pointer">
-                            <input type="radio" name="rating" value="{{ $i }}" class="sr-only peer star-radio-input" required>
-                            <span class="star-radio-label peer-checked:text-amber-500">★</span>
-                        </label>
-                    @endfor
+                <div class="rating-stars-container">
+                    <input type="radio" id="star5" name="rating" value="5" class="sr-only star-radio-input" required>
+                    <label for="star5" class="star-radio-label cursor-pointer px-0.5">★</label>
+
+                    <input type="radio" id="star4" name="rating" value="4" class="sr-only star-radio-input" required>
+                    <label for="star4" class="star-radio-label cursor-pointer px-0.5">★</label>
+
+                    <input type="radio" id="star3" name="rating" value="3" class="sr-only star-radio-input" required>
+                    <label for="star3" class="star-radio-label cursor-pointer px-0.5">★</label>
+
+                    <input type="radio" id="star2" name="rating" value="2" class="sr-only star-radio-input" required>
+                    <label for="star2" class="star-radio-label cursor-pointer px-0.5">★</label>
+
+                    <input type="radio" id="star1" name="rating" value="1" class="sr-only star-radio-input" required>
+                    <label for="star1" class="star-radio-label cursor-pointer px-0.5">★</label>
                 </div>
             </div>
 
@@ -402,6 +472,17 @@
 @endif
 
 <script>
+    // --- CUSTOM MODAL ALERT ENGINE ---
+    function showCustomAlert(message) {
+        document.getElementById('custom-alert-message').textContent = message;
+        document.getElementById('custom-alert-modal').classList.remove('hidden');
+    }
+
+    function closeCustomAlert() {
+        document.getElementById('custom-alert-modal').classList.add('hidden');
+    }
+
+
     // --- CALENDAR HANDLERS ---
     const bookingModal = document.getElementById('booking_modal');
     const closeBookingBtn = document.getElementById('close_booking_modal');

@@ -195,6 +195,55 @@
         .step-row h5 { font-size: 1.05rem; margin-bottom: 0.35rem; text-transform: none; font-family: 'Inter', sans-serif; font-weight: 700; letter-spacing: 0; }
         .step-row .text-sm { color: #5a5a5a; font-size: 0.92rem; line-height: 1.55; }
 
+        /* How-it-works tab switcher */
+        .how-tabs-wrap {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 2.5rem;
+        }
+        .how-tabs {
+            position: relative;
+            display: inline-flex;
+            border: 1px solid var(--ink);
+        }
+        .how-tab {
+            position: relative;
+            z-index: 2;
+            background: transparent;
+            border: none;
+            padding: 0.8rem 2rem;
+            font-family: 'Bebas Neue', sans-serif;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            color: var(--ink);
+            cursor: pointer;
+            transition: color .3s ease;
+            width: 10rem;
+        }
+        .how-tab.active { color: var(--white); }
+        .how-tab-indicator {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 10rem;
+            background: var(--ink);
+            z-index: 1;
+            transition: transform .4s cubic-bezier(.4,0,.2,1), background-color .3s ease;
+        }
+        .how-track-viewport { overflow: hidden; }
+        .how-track {
+            display: flex;
+            width: 200%;
+            transition: transform .5s cubic-bezier(.4,0,.2,1);
+        }
+        .how-slide {
+            width: 50%;
+            flex-shrink: 0;
+            padding: 0 0.5rem;
+        }
+
         /* CTA */
         .swiss-cta {
             background: var(--white);
@@ -235,6 +284,8 @@
         }
         @media (prefers-reduced-motion: reduce) {
             .marquee-track { animation: none; }
+            .how-track { transition: none; }
+            .how-tab-indicator { transition: none; }
         }
 
         /* ============ RESPONSIVE / MOBILE ============ */
@@ -257,6 +308,8 @@
             .marquee-item { font-size: 1.05rem; padding: 0 0.9rem; }
             .marquee-track { animation-duration: 22s; }
             .step-num { font-size: 1.6rem; width: 2.4rem; }
+            .how-tab { width: 8rem; padding: 0.7rem 1rem; font-size: 0.78rem; }
+            .how-tab-indicator { width: 8rem; }
         }
 
         @media (max-width: 480px) {
@@ -266,6 +319,8 @@
             .swiss-icon { width: 36px; height: 36px; }
             .marquee-item { font-size: 0.9rem; padding: 0 0.65rem; }
             .marquee-track { animation-duration: 16s; }
+            .how-tab { width: 6.5rem; padding: 0.65rem 0.5rem; font-size: 0.7rem; letter-spacing: 0.06em; }
+            .how-tab-indicator { width: 6.5rem; }
         }
     </style>
 </head>
@@ -380,64 +435,75 @@
             <p class="text-muted col-md-6 mx-auto">Explore the structured steps designed to make private tutoring simple, secure, and highly effective.</p>
         </div>
 
-        <div class="row g-4">
-            <!-- How it works for Students -->
-            <div class="col-md-6">
-                <div class="swiss-panel">
-                    <span class="pill-label">For Students</span>
+        <!-- Tab switcher: pick which side to view instead of seeing both at once -->
+        <div class="how-tabs-wrap">
+            <div class="how-tabs" role="tablist">
+                <span class="how-tab-indicator" id="howTabIndicator"></span>
+                <button type="button" class="how-tab active" id="howTabStudents" role="tab" aria-selected="true">For Students</button>
+                <button type="button" class="how-tab" id="howTabTutors" role="tab" aria-selected="false">For Tutors</button>
+            </div>
+        </div>
 
-                    <div class="step-row">
-                        <div class="step-num display-font">01</div>
-                        <div>
-                            <h5>Search &amp; Filter</h5>
-                            <p class="text-sm mb-0">Browse through our database of active, verified tutors. Filter your choices by specific subject, city, or local sub-city details.</p>
+        <div class="how-track-viewport">
+            <div class="how-track" id="howTrack">
+                <!-- How it works for Students -->
+                <div class="how-slide">
+                    <div class="swiss-panel">
+                        <span class="pill-label">For Students</span>
+
+                        <div class="step-row">
+                            <div class="step-num display-font">01</div>
+                            <div>
+                                <h5>Search &amp; Filter</h5>
+                                <p class="text-sm mb-0">Browse through our database of active, verified tutors. Filter your choices by specific subject, city, or local sub-city details.</p>
+                            </div>
                         </div>
-                    </div>
 
-                    <div class="step-row">
-                        <div class="step-num display-font">02</div>
-                        <div>
-                            <h5>Select a Schedule</h5>
-                            <p class="text-sm mb-0">Review the tutor's open schedule slots. Book a lesson directly through the platform, choosing a time slot that matches your availability.</p>
+                        <div class="step-row">
+                            <div class="step-num display-font">02</div>
+                            <div>
+                                <h5>Select a Schedule</h5>
+                                <p class="text-sm mb-0">Review the tutor's open schedule slots. Book a lesson directly through the platform, choosing a time slot that matches your availability.</p>
+                            </div>
                         </div>
-                    </div>
 
-                    <div class="step-row">
-                        <div class="step-num display-font">03</div>
-                        <div>
-                            <h5>Start Learning</h5>
-                            <p class="text-sm mb-0">Once the tutor accepts your lesson booking, you will receive real-time dashboard notifications. Meet your tutor and start your session.</p>
+                        <div class="step-row">
+                            <div class="step-num display-font">03</div>
+                            <div>
+                                <h5>Start Learning</h5>
+                                <p class="text-sm mb-0">Once the tutor accepts your lesson booking, you will receive real-time dashboard notifications. Meet your tutor and start your session.</p>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- How it works for Tutors -->
-            <div class="col-md-6">
-                <div class="swiss-panel accent-blue">
-                    <span class="pill-label">For Tutors</span>
+                <!-- How it works for Tutors -->
+                <div class="how-slide">
+                    <div class="swiss-panel accent-blue">
+                        <span class="pill-label">For Tutors</span>
 
-                    <div class="step-row">
-                        <div class="step-num display-font">01</div>
-                        <div>
-                            <h5>Build a Profile</h5>
-                            <p class="text-sm mb-0">Create an account, submit your educational details or programming experience, set your profile image, and list your pricing rates.</p>
+                        <div class="step-row">
+                            <div class="step-num display-font">01</div>
+                            <div>
+                                <h5>Build a Profile</h5>
+                                <p class="text-sm mb-0">Create an account, submit your educational details or programming experience, set your profile image, and list your pricing rates.</p>
+                            </div>
                         </div>
-                    </div>
 
-                    <div class="step-row">
-                        <div class="step-num display-font">02</div>
-                        <div>
-                            <h5>Configure Calendar</h5>
-                            <p class="text-sm mb-0">Use your tutor dashboard to configure your weekly availability schedule, letting prospective students see when you are open for bookings.</p>
+                        <div class="step-row">
+                            <div class="step-num display-font">02</div>
+                            <div>
+                                <h5>Configure Calendar</h5>
+                                <p class="text-sm mb-0">Use your tutor dashboard to configure your weekly availability schedule, letting prospective students see when you are open for bookings.</p>
+                            </div>
                         </div>
-                    </div>
 
-                    <div class="step-row">
-                        <div class="step-num display-font">03</div>
-                        <div>
-                            <h5>Confirm &amp; Teach</h5>
-                            <p class="text-sm mb-0">Accept or reject pending lesson requests from students via your dashboard, coordinate sessions, and grow your teaching career.</p>
+                        <div class="step-row">
+                            <div class="step-num display-font">03</div>
+                            <div>
+                                <h5>Confirm &amp; Teach</h5>
+                                <p class="text-sm mb-0">Accept or reject pending lesson requests from students via your dashboard, coordinate sessions, and grow your teaching career.</p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -459,5 +525,34 @@
 
 @include('Layouts.Footer')
 
+<script>
+    // Purely front-end tab switcher for the "How TutorLink Works" section.
+    // No routes, no form data, no backend interaction — just toggles which
+    // panel is visible and animates the slide/indicator.
+    (function () {
+        const tabStudents = document.getElementById('howTabStudents');
+        const tabTutors = document.getElementById('howTabTutors');
+        const indicator = document.getElementById('howTabIndicator');
+        const track = document.getElementById('howTrack');
+
+        function activate(which) {
+            const isStudents = which === 'students';
+
+            tabStudents.classList.toggle('active', isStudents);
+            tabTutors.classList.toggle('active', !isStudents);
+            tabStudents.setAttribute('aria-selected', isStudents ? 'true' : 'false');
+            tabTutors.setAttribute('aria-selected', isStudents ? 'false' : 'true');
+
+            indicator.style.transform = isStudents ? 'translateX(0%)' : 'translateX(100%)';
+            indicator.style.backgroundColor = isStudents ? 'var(--ink)' : 'var(--blue)';
+            track.style.transform = isStudents ? 'translateX(0%)' : 'translateX(-50%)';
+        }
+
+        tabStudents.addEventListener('click', () => activate('students'));
+        tabTutors.addEventListener('click', () => activate('tutors'));
+    })();
+</script>
+
 </body>
 </html>
+
