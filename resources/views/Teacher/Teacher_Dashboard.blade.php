@@ -154,7 +154,7 @@
             </button>
         </div>
         
-        <!-- Mobile Drawer menu using beautiful new styles -->
+        <!-- Mobile Drawer menu -->
         <div class="flex flex-col">
             <button type="button" class="td-nav-item is-active" data-tab-trigger="profile-overview">
                 <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -218,12 +218,6 @@
 
 <!-- DASHBOARD CONTAINER -->
 <div class="td-dashboard max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-
-    @if(session('success'))
-        <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 mb-8">
-            {{ session('success') }}
-        </div>
-    @endif
 
     <!-- GRID CONTAINER -->
     <div class="flex flex-col lg:flex-row gap-8 items-start relative">
@@ -292,11 +286,18 @@
             </div>
         </aside>
 
-        <!-- INVISIBLE LAYOUT SPACER (Occupies the space behind the fixed desktop sidebar so content does not overlap) -->
+        <!-- INVISIBLE LAYOUT SPACER (Occupies desktop sidebar space so content does not overlap) -->
         <div class="hidden lg:block w-64 shrink-0"></div>
 
         <!-- MAIN CONTENT PANEL (SCROLLS INDEPENDENTLY) -->
         <div class="flex-grow w-full">
+
+            <!-- NOTIFICATION BANNER (Placed here inside the content column to prevent overlap) -->
+            @if(session('success'))
+                <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 mb-6">
+                    {{ session('success') }}
+                </div>
+            @endif
 
             <!-- TAB 1: OVERVIEW & PROFILE -->
             <div data-tab-content="profile-overview" class="space-y-6">
