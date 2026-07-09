@@ -15,20 +15,41 @@ class SendVerificationCode extends Mailable
     use Queueable, SerializesModels;
 
     public $code;
+    public $type;
 
     /**
      * Create a new message instance.
+     *
+     * @param int|string $code
+     * @param string $type Can be 'register', 'password_reset', 'change_username', or 'change_password'
      */
-    public function __construct($code)
+    public function __construct($code, $type = 'register')
     {
         $this->code = $code;
+        $this->type = $type;
     }
 
-
-        public function build()
+    /**
+     * Build the message using HTML layout.
+     */
+    public function build()
     {
-        return $this->subject('Verify Your Email Address')
-                    ->html("<p>Thank you for registering. Your verification code is: <strong>{$this->code}</strong></p><p>This code will expire in 15 minutes.</p>");
+        $subject = 'Verify Your Email Address';
+        $message = "Thank you for registering. Your verification code is: <strong>{$this->code}</strong>";
+
+        if ($this->type === 'password_reset') {
+            $subject = 'Reset Your Password';
+            $message = "You requested a password reset. Your verification code is: <strong>{$this->code}</strong>";
+        } elseif ($this->type === 'change_username') {
+            $subject = 'Verify Username Change';
+            $message = "You requested to change your username. Your verification code is: <strong>{$this->code}</strong>";
+        } elseif ($this->type === 'change_password') {
+            $subject = 'Verify Password Change';
+            $message = "You requested to change your password. Your verification code is: <strong>{$this->code}</strong>";
+        }
+
+        return $this->subject($subject)
+                    ->html("<p>{$message}</p><p>This code will expire in 15 minutes.</p>");
     }
 
     /**
@@ -36,8 +57,18 @@ class SendVerificationCode extends Mailable
      */
     public function envelope(): Envelope
     {
+        $subject = 'Verify Your Email Address';
+
+        if ($this->type === 'password_reset') {
+            $subject = 'Reset Your Password';
+        } elseif ($this->type === 'change_username') {
+            $subject = 'Verify Username Change';
+        } elseif ($this->type === 'change_password') {
+            $subject = 'Verify Password Change';
+        }
+
         return new Envelope(
-            subject: 'Send Verification Code',
+            subject: $subject,
         );
     }
 

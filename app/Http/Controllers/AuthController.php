@@ -22,9 +22,7 @@ class AuthController extends Controller
      // Show Teacher Registration Form
     public function showTeacherRegisterForm()
     {
-       
         $locations = Location::all();
-        
         return view('Auth.Teacher_Register', compact('locations'));
     }
 
@@ -78,7 +76,8 @@ class AuthController extends Controller
                 'created_at'    => now(), // Manually set created_at
             ]);
 
-            Mail::to($user->email)->send(new SendVerificationCode($code));
+            // Specified 'register' as the email type
+            Mail::to($user->email)->send(new SendVerificationCode($code, 'register'));
 
             session([
                 'pending_verification_email' => $user->email,
@@ -131,8 +130,8 @@ class AuthController extends Controller
             'created_at'    => now(), // Manually set created_at
         ]);
 
-        // Mail out the new code
-        Mail::to($email)->send(new SendVerificationCode($code));
+        // Specified 'register' as the email type
+        Mail::to($email)->send(new SendVerificationCode($code, 'register'));
 
         return response()->json([
             'success' => true,
@@ -145,16 +144,12 @@ class AuthController extends Controller
     {
         // Ensure user has a pending verification session active
         if (!session()->has('pending_verification_email')) {
-            // FIX: Changed from Auth.teacher_Register to Auth.Teacher_Register
             return redirect()->route('Auth.Teacher_Register')
             ->withErrors(['error' => 'No active registration session found.']);
         }
 
         return view('Auth.verify_email');
     }
-
-
-
 
    public function verifyEmail(Request $request)
     {
@@ -230,8 +225,7 @@ class AuthController extends Controller
             ->withErrors(['error' => 'User not found.']);
     }
 
-
-    // 1. Show Student Registration Form
+    // Show Student Registration Form
     public function showStudentRegisterForm()
     {
         $locations = Location::all();
@@ -291,7 +285,8 @@ class AuthController extends Controller
                 'created_at'    => now(), // Manually set created_at
             ]);
 
-            Mail::to($user->email)->send(new SendVerificationCode($code));
+            // Specified 'register' as the email type
+            Mail::to($user->email)->send(new SendVerificationCode($code, 'register'));
 
             session([
                 'pending_verification_email' => $user->email,
@@ -304,18 +299,14 @@ class AuthController extends Controller
             throw $e; 
         }
     }
-
-
     
-    // 1. Show the Login Form
+    // Show the Login Form
     public function showLoginForm()
     {
         return view('Auth.Login');
     }
 
-
-
-  // Process Secure Login with 5-Attempt Rate Limiting
+    // Process Secure Login with 5-Attempt Rate Limiting
     public function login(Request $request)
     {
         $request->validate([
@@ -364,7 +355,7 @@ class AuthController extends Controller
             // Check User Role securely
             $role = Role::find($user->role_id);
             if ($role) {
-                $roleType = strtolower($role->role_type); // <-- Declared securely here
+                $roleType = strtolower($role->role_type);
 
                 // 1. If Teacher
                 if ($roleType === 'teacher') {
@@ -382,8 +373,7 @@ class AuthController extends Controller
                     return redirect()->route('student.dashboard')->with('success', 'Welcome back!');
                 }
                 
-
-                  if (in_array($roleType, ['admin', 'super_admin'])) {
+                if (in_array($roleType, ['admin', 'super_admin'])) {
                    return redirect()->route('admin.dashboard')->with('success', 'Welcome back to the Admin Dashboard!');
                 }
             }
@@ -402,8 +392,7 @@ class AuthController extends Controller
         ]);
     }
 
-
-     public function sendResetCode(Request $request)
+    public function sendResetCode(Request $request)
     {
         $request->validate([
             'email' => 'required|email|exists:users,email',
@@ -440,7 +429,8 @@ class AuthController extends Controller
             'created_at'    => now(),
         ]);
 
-        Mail::to($user->email)->send(new SendVerificationCode($code));
+        // Specified 'password_reset' as the email type
+        Mail::to($user->email)->send(new SendVerificationCode($code, 'password_reset'));
 
         return response()->json([
             'success' => true,
@@ -514,13 +504,11 @@ class AuthController extends Controller
             'message' => 'Your password has been successfully reset! You can now log in.'
         ]);
     }
-
     
     // 3. Process Logout Safely
     public function logout(Request $request)
     {
         Auth::logout();
-
 
         // Invalidate current session and regenerate token
         $request->session()->invalidate();
@@ -528,5 +516,4 @@ class AuthController extends Controller
 
         return redirect()->route('login')->with('success', 'Logged out successfully.');
     }
-  }
-
+}

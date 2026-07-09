@@ -63,7 +63,9 @@ class SettingController extends Controller
             'created_at'    => now(), // Manually supply created_at because $timestamps = false; is active on the model
         ]);
 
-        Mail::to($user->email)->send(new SendVerificationCode($code));
+        // Dynamically set the email type depending on the action
+        $emailType = $request->action === 'username' ? 'change_username' : 'change_password';
+        Mail::to($user->email)->send(new SendVerificationCode($code, $emailType));
 
         return response()->json([
             'success' => true,
