@@ -219,7 +219,7 @@ This project is licensed under the MIT License — see the `LICENSE` file for de
 
 ## Contact
 
-For questions, support, or partnership inquiries: **support@tutorlink.com**
+For questions, support, or partnership inquiries: **abeltiruneh@gmail.com**
 
 <br/>
 
