@@ -8,8 +8,11 @@
 [![Laravel](https://img.shields.io/badge/Laravel-10.x-FF2D20?style=flat-square&logo=laravel&logoColor=white)](https://laravel.com/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.x-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
 [![Vite](https://img.shields.io/badge/Vite-Build-646CFF?style=flat-square&logo=vite&logoColor=white)](https://vitejs.dev/)
-[![MySQL](https://img.shields.io/badge/MySQL-Database-4479A1?style=flat-square&logo=mysql&logoColor=white)](https://www.mysql.com/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Database-4169E1?style=flat-square&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![Render](https://img.shields.io/badge/Deployed_on-Render-46E3B7?style=flat-square&logo=render&logoColor=white)](https://tutorlink-km9e.onrender.com)
 [![License](https://img.shields.io/badge/License-MIT-black?style=flat-square)](#license)
+
+**[Live Demo → tutorlink-km9e.onrender.com](https://tutorlink-km9e.onrender.com)**
 
 </div>
 
@@ -32,6 +35,7 @@ The platform handles the entire relationship end-to-end: discovery, booking, sch
 
 - [Key Features](#key-features)
 - [Tech Stack](#tech-stack)
+- [Live Demo](#live-demo)
 - [Getting Started](#getting-started)
 - [Project Structure](#project-structure)
 - [Design System](#design-system)
@@ -76,9 +80,20 @@ The platform handles the entire relationship end-to-end: discovery, booking, sch
 | Frontend Templating | Laravel Blade |
 | Styling | Tailwind CSS |
 | Build Tooling | Vite |
-| Database | MySQL |
+| Database | PostgreSQL |
+| Hosting | Render |
 | Real-time UX | Polling-based live messaging & notifications (AJAX / Fetch API) |
 | Fonts | Bebas Neue (display), Inter (body) |
+
+---
+
+## Live Demo
+
+TutorLink is deployed on Render and available here:
+
+**[https://tutorlink-km9e.onrender.com](https://tutorlink-km9e.onrender.com)**
+
+> Note: the free Render tier may spin down after inactivity, so the first load can take a few seconds while the instance wakes up.
 
 ---
 
@@ -88,7 +103,7 @@ The platform handles the entire relationship end-to-end: discovery, booking, sch
 - PHP 8.1+
 - Composer
 - Node.js & npm
-- MySQL (or another Laravel-supported database)
+- PostgreSQL (or another Laravel-supported database)
 
 ### Installation
 
@@ -108,7 +123,7 @@ cp .env.example .env
 php artisan key:generate
 ```
 
-Update `.env` with your database credentials, then run the migrations:
+Update `.env` with your PostgreSQL credentials (`DB_CONNECTION=pgsql`, `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`), then run the migrations:
 
 ```bash
 php artisan migrate --seed
@@ -204,7 +219,7 @@ This project is licensed under the MIT License — see the `LICENSE` file for de
 
 ## Contact
 
-For questions, support, or partnership inquiries: **support@tutorlink.com**
+For questions, support, or partnership inquiries: **abeltiruneh@gmail.com**
 
 <br/>
 
