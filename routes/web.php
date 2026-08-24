@@ -13,6 +13,10 @@ use App\Http\Controllers\TeacherController;
 use App\Http\Controllers\AdminController;
 
 
+
+
+
+
 Route::get('/', function () {
     return view('Landing');
 })->name('Landing');
@@ -177,4 +181,6 @@ Route::middleware(['auth', 'admin'])->group(function () {
     [AdminController::class, 'storeAdmin'])->name('admin.store');
     
 });
+
+
 
