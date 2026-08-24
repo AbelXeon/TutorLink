@@ -77,10 +77,7 @@
 <div class="inbox-shell swiss-panel bg-white overflow-hidden flex h-[calc(100vh-10rem)] relative">
 
     <!-- LEFT SIDEBAR: ACTIVE CONVERSATIONS LIST -->
-    <!-- Mobile: full width when no chat is open, hidden once a chat is active.
-         Desktop (md+): always visible at 1/3 width, exactly as before. -->
     <div class="{{ isset($activeConversation) ? 'hidden md:flex' : 'flex' }} w-full md:w-1/3 border-r flex-col" style="border-color: var(--line);">
-        <!-- UPDATED: Dynamic Sidebar Header with Go Home Arrow Redirection -->
         <div class="p-4 border-b flex justify-between items-center" style="border-color: var(--line); background: var(--paper);">
             <h3 class="text-sm display-font text-gray-900">Conversations</h3>
 
@@ -132,8 +129,6 @@
     </div>
 
     <!-- RIGHT MAIN AREA: ACTIVE CHAT CONTAINER -->
-    <!-- Mobile: hidden until a chat is opened, then takes the full width with a
-         back-to-list link. Desktop (md+): always visible at 2/3 width. -->
     <div class="{{ isset($activeConversation) ? 'flex' : 'hidden md:flex' }} w-full md:w-2/3 flex-col" style="background: var(--paper);">
         @if(isset($activeConversation))
             @php
@@ -142,7 +137,6 @@
 
             <!-- Chat Partner Header -->
             <div class="bg-white p-4 border-b flex items-center gap-3 z-10" style="border-color: var(--line);">
-                <!-- Mobile-only back button to return to the conversation list -->
                 <a href="{{ route('messages.index') }}" class="md:hidden text-gray-500 hover:text-gray-800 -ml-1 p-1">
                     <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6L9 12L15 18" stroke-linecap="round" stroke-linejoin="round"/></svg>
                 </a>
@@ -171,7 +165,6 @@
 
                             @elseif($msg->file_type == 'image')
                                 <div class="space-y-1">
-                                    <!-- UPDATED: Clicking now runs openImageLightbox() instead of window.open() -->
                                     <img src="{{ asset('storage/' . $msg->file_path) }}" class="max-h-60 object-cover cursor-pointer" alt="Attachment" onclick="openImageLightbox(this.src)" />
                                     @if($msg->message_text) <p class="mt-1">{{ $msg->message_text }}</p> @endif
                                 </div>
@@ -251,7 +244,7 @@
                 </form>
             </div>
 
-            <!-- JAVASCRIPT: POLLING & GEOLOCATION CONTROLLER -->
+            <!-- JAVASCRIPT: INSTANT OPTIMISTIC SENDER, FAST GEO & WEBSOCKET/POLL CONTROLLER -->
             <script>
                 const messagesWindow = document.getElementById('messages_window');
                 const chatForm = document.getElementById('chat_form');
@@ -268,14 +261,16 @@
                 const latInput = document.getElementById('latitude');
                 const lngInput = document.getElementById('longitude');
 
-                // Track rendered IDs to prevent loops
                 const renderedMessageIds = new Set();
                 document.querySelectorAll('.last-message-marker').forEach(element => {
-                    renderedMessageIds.add(parseInt(element.getAttribute('data-id')));
+                    if (element.getAttribute('data-id')) {
+                        renderedMessageIds.add(parseInt(element.getAttribute('data-id')));
+                    }
                 });
 
                 let lastMessageId = {{ $activeConversation->messages->last()?->id ?? 0 }};
-                let isSending = false;
+                const currentUserId = {{ Auth::id() }};
+                const conversationId = {{ $activeConversation->id }};
 
                 messagesWindow.scrollTop = messagesWindow.scrollHeight;
 
@@ -285,6 +280,9 @@
                     if (file) {
                         const extension = file.name.split('.').pop().toLowerCase();
                         locationPreview.classList.add('hidden');
+                        latInput.value = '';
+                        lngInput.value = '';
+                        geoBtn.classList.remove('is-active');
                         
                         if (['jpg', 'jpeg', 'png'].includes(extension)) {
                             const reader = new FileReader();
@@ -316,22 +314,43 @@
                     geoBtn.classList.remove('is-active');
                 });
 
-                // 2. SUBMIT FORM VIA AJAX
+                // 2. INSTANT OPTIMISTIC SUBMIT (Instant Feedback like Telegram)
                 chatForm.addEventListener('submit', function(e) {
                     e.preventDefault();
 
-                    if (isSending) return;
-
                     const messageText = chatInput.value.trim();
-                    const hasFile = attachmentInput.value !== '';
+                    const hasFile = attachmentInput.files && attachmentInput.files.length > 0;
                     const hasLocation = latInput.value !== '';
 
                     if (!messageText && !hasFile && !hasLocation) return;
 
-                    isSending = true;
-                    submitSendBtn.disabled = true;
+                    const tempId = 'temp_' + Date.now();
+                    
+                    // Optimistically show message immediately
+                    if (!hasFile) {
+                        const optimisticMsg = {
+                            id: tempId,
+                            message_text: hasLocation ? `${latInput.value},${lngInput.value}` : messageText,
+                            file_type: hasLocation ? 'location' : null,
+                            file_path: null,
+                            is_optimistic: true
+                        };
+                        appendMessageBubble(optimisticMsg, true);
+                    }
 
                     const formData = new FormData(this);
+
+                    // Reset form inputs instantly
+                    chatInput.value = '';
+                    attachmentInput.value = '';
+                    previewContainer.classList.add('hidden');
+                    imagePreview.src = '';
+                    locationPreview.classList.add('hidden');
+                    latInput.value = '';
+                    lngInput.value = '';
+                    chatInput.placeholder = "Type a message...";
+                    chatInput.disabled = false;
+                    geoBtn.classList.remove('is-active');
 
                     fetch(this.action, {
                         method: 'POST',
@@ -342,32 +361,45 @@
                     })
                     .then(response => response.json())
                     .then(data => {
-                        isSending = false;
-                        submitSendBtn.disabled = false;
-
                         if (data.success) {
-                            chatInput.value = '';
-                            attachmentInput.value = '';
-                            previewContainer.classList.add('hidden');
-                            imagePreview.src = '';
-                            locationPreview.classList.add('hidden');
-                            latInput.value = '';
-                            lngInput.value = '';
-                            chatInput.placeholder = "Type a message...";
-                            chatInput.disabled = false;
-                            geoBtn.classList.remove('is-active');
-
-                            appendMessageBubble(data.message, true);
+                            // Replace temporary optimistic message with real message
+                            const tempElem = document.querySelector(`[data-id="${tempId}"]`);
+                            if (tempElem) {
+                                tempElem.setAttribute('data-id', data.message.id);
+                                renderedMessageIds.add(data.message.id);
+                            } else {
+                                appendMessageBubble(data.message, true);
+                            }
+                            lastMessageId = Math.max(lastMessageId, data.message.id);
                         }
                     })
                     .catch(err => {
-                        isSending = false;
-                        submitSendBtn.disabled = false;
-                        console.error(err);
+                        console.error("Send error:", err);
+                        const tempElem = document.querySelector(`[data-id="${tempId}"]`);
+                        if (tempElem) {
+                            tempElem.style.opacity = '0.5';
+                            tempElem.title = 'Failed to send. Check connection.';
+                        }
                     });
                 });
 
-                // 3. REAL-TIME AJAX POLL (3 seconds interval)
+                // 3. FAST REAL-TIME UPDATES (WebSocket + Fallback Polling)
+                function setupWebSocket() {
+                    if (window.Echo) {
+                        window.Echo.private(`chat.${conversationId}`)
+                            .listen('MessageSent', (e) => {
+                                if (e.message.sender_id !== currentUserId) {
+                                    appendMessageBubble(e.message, false);
+                                    let alertSound = new Audio('/sounds/notification.mp3');
+                                    alertSound.play().catch(() => {});
+                                }
+                            });
+                        return true;
+                    }
+                    return false;
+                }
+
+                // Polling runs smoothly (backed by WebSocket if available)
                 function pollMessages() {
                     if (!lastMessageId) return;
 
@@ -376,7 +408,7 @@
                     })
                     .then(response => response.json())
                     .then(data => {
-                        if (data.messages.length > 0) {
+                        if (data.messages && data.messages.length > 0) {
                             data.messages.forEach(msg => {
                                 const isMe = (msg.sender_id === data.current_user_id);
                                 appendMessageBubble(msg, isMe);
@@ -385,18 +417,23 @@
                             const lastMsg = data.messages[data.messages.length - 1];
                             if (lastMsg.sender_id !== data.current_user_id) {
                                 let alertSound = new Audio('/sounds/notification.mp3');
-                                alertSound.play().catch(e => console.log("Sound play deferred"));
+                                alertSound.play().catch(() => {});
                             }
                         }
                     })
                     .catch(err => console.error(err));
                 }
 
+                if (!setupWebSocket()) {
+                    setInterval(pollMessages, 1500);
+                }
+
                 function appendMessageBubble(msg, isMe) {
-                    if (renderedMessageIds.has(msg.id)) return;
-                    
-                    renderedMessageIds.add(msg.id);
-                    lastMessageId = msg.id;
+                    if (msg.id && typeof msg.id === 'number' && renderedMessageIds.has(msg.id)) return;
+                    if (msg.id && typeof msg.id === 'number') {
+                        renderedMessageIds.add(msg.id);
+                        lastMessageId = Math.max(lastMessageId, msg.id);
+                    }
 
                     const div = document.createElement('div');
                     div.className = `flex ${isMe ? 'justify-end' : 'justify-start'} last-message-marker`;
@@ -404,10 +441,11 @@
 
                     let msgBody = '';
                     if (!msg.file_type) {
-                        msgBody = `<p>${msg.message_text}</p>`;
+                        msgBody = `<p>${escapeHtml(msg.message_text)}</p>`;
                     } else if (msg.file_type === 'image') {
-                        msgBody = `<img src="/storage/${msg.file_path}" class="max-h-60 object-cover cursor-pointer" onclick="openImageLightbox(this.src)" />`;
-                        if (msg.message_text) msgBody += `<p class="mt-1">${msg.message_text}</p>`;
+                        const imgSrc = msg.file_path ? `/storage/${msg.file_path}` : '';
+                        msgBody = `<img src="${imgSrc}" class="max-h-60 object-cover cursor-pointer" onclick="openImageLightbox(this.src)" />`;
+                        if (msg.message_text) msgBody += `<p class="mt-1">${escapeHtml(msg.message_text)}</p>`;
                     } else if (msg.file_type === 'document') {
                         msgBody = `
                             <div class="flex items-center gap-2">
@@ -416,7 +454,7 @@
                             </div>
                         `;
                     } else if (msg.file_type === 'location') {
-                        const coords = msg.message_text.split(',');
+                        const coords = (msg.message_text || '').split(',');
                         msgBody = `
                             <span class="text-xs font-bold block uppercase tracking-wider opacity-80">Shared Location Pin</span>
                             <a href="https://www.google.com/maps?q=${coords[0]},${coords[1]}" target="_blank" class="inline-flex items-center gap-1.5 bg-white font-bold px-3 py-1.5 border hover:bg-gray-50 transition text-xs" style="color:#1350e0; border-color: rgba(10,10,10,0.14);">
@@ -437,13 +475,26 @@
                     messagesWindow.scrollTop = messagesWindow.scrollHeight;
                 }
 
-                setInterval(pollMessages, 1500); // 1.5 seconds
+                function escapeHtml(text) {
+                    if (!text) return '';
+                    const div = document.createElement('div');
+                    div.textContent = text;
+                    return div.innerHTML;
+                }
 
-                // 4. GPS GEOLOCATION CONTROLLER
+                // 4. FAST HIGH-SPEED GEOLOCATION CONTROLLER
                 geoBtn.addEventListener('click', function() {
                     if (navigator.geolocation) {
                         geoBtn.classList.add('is-active');
-                        
+                        previewText.textContent = "Acquiring GPS position...";
+                        previewContainer.classList.remove('hidden');
+
+                        const geoOptions = {
+                            enableHighAccuracy: false, // Prevents 10-second GPS satellite stall
+                            timeout: 5000,             // Fast 5s fallback
+                            maximumAge: 60000          // Uses instant cache if available
+                        };
+
                         navigator.geolocation.getCurrentPosition(
                             function(position) {
                                 const lat = position.coords.latitude.toFixed(5);
@@ -458,7 +509,6 @@
                                 locationCoordsText.textContent = `${lat}, ${lng}`;
                                 locationPreview.classList.remove('hidden');
                                 previewText.textContent = "Current GPS Coordinates pinned.";
-                                previewContainer.classList.remove('hidden');
 
                                 chatInput.placeholder = "Location pinned! Ready to send.";
                                 chatInput.disabled = true;
@@ -466,7 +516,9 @@
                             function(error) {
                                 alert("Failed to fetch location. Please check your browser's location permissions.");
                                 geoBtn.classList.remove('is-active');
-                            }
+                                previewContainer.classList.add('hidden');
+                            },
+                            geoOptions
                         );
                     } else {
                         alert("Geolocation is not supported by your browser.");
@@ -488,7 +540,7 @@
 </div>
 </div>
 
-<!-- NEW: IMAGE LIGHTBOX MODAL (Allows full-screen viewing without leaving the page) -->
+<!-- IMAGE LIGHTBOX MODAL -->
 <div id="image_lightbox" class="hidden fixed inset-0 z-50 bg-black bg-opacity-90 flex items-center justify-center p-4 transition duration-300 select-none">
     <button type="button" id="close_lightbox_btn" class="absolute top-6 right-6 text-white hover:text-gray-300 focus:outline-none">
         <svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -499,7 +551,6 @@
 </div>
 
 <script>
-    // LIGHTBOX JAVASCRIPT CONTROLLER
     const lightbox = document.getElementById('image_lightbox');
     const lightboxImg = document.getElementById('lightbox_image');
     const closeLightboxBtn = document.getElementById('close_lightbox_btn');
@@ -514,7 +565,6 @@
         lightboxImg.src = '';
     });
 
-    // Close lightbox if clicking outside the image background
     lightbox.addEventListener('click', (e) => {
         if (e.target === lightbox) {
             lightbox.classList.add('hidden');

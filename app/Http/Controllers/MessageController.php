@@ -5,12 +5,12 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\Notification;
 use App\Models\User;
+use App\Events\MessageSent;
 
 class MessageController extends Controller
 {
@@ -81,11 +81,10 @@ class MessageController extends Controller
             
             if (in_array($extension, ['jpg', 'jpeg', 'png'])) {
                 $fileType = 'image';
-                // OPTIMIZED: Automatically compress and resize the chat image to 600px wide max
                 $filePath = $this->resizeAndSaveImage($file, 'attachments');
             } else {
                 $fileType = 'document';
-                $filePath = $file->store('attachments', 'public'); // Keep PDFs raw
+                $filePath = $file->store('attachments', 'public');
             }
         }
 
@@ -114,13 +113,20 @@ class MessageController extends Controller
             'notification_type' => 'message',
             'title'             => 'New Message from ' . $user->first_name,
             'message'           => $fileType ? "Sent you a {$fileType}." : Str::limit($messageText, 50),
-            'action_url'        => route('messages.show', $user->username), // Redirects directly to sender's username
+            'action_url'        => route('messages.show', $user->username),
         ]);
+
+        $messageData = $message->load('sender');
+
+        // Optional WebSocket broadcast if MessageSent event exists
+        if (class_exists('App\Events\MessageSent')) {
+            broadcast(new MessageSent($messageData))->toOthers();
+        }
 
         if ($request->ajax() || $request->wantsJson()) {
             return response()->json([
                 'success' => true,
-                'message' => $message->load('sender')
+                'message' => $messageData
             ]);
         }
 
@@ -158,12 +164,11 @@ class MessageController extends Controller
         ]);
     }
 
-   
     private function resizeAndSaveImage($file, $destinationPath)
     {
         list($width, $height, $type) = getimagesize($file);
         
-        $maxDimension = 600; // Increased to 600px for crisp details in chat bubbles
+        $maxDimension = 600;
         $ratio = $width / $height;
         
         if ($ratio > 1) {
@@ -201,7 +206,7 @@ class MessageController extends Controller
             mkdir(dirname($fullPath), 0755, true);
         }
 
-        imagejpeg($dst, $fullPath, 80); // Compress at 80%
+        imagejpeg($dst, $fullPath, 80);
 
         imagedestroy($src);
         imagedestroy($dst);
