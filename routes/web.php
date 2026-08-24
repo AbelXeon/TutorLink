@@ -12,6 +12,8 @@ use App\Http\Controllers\StudentController;
 use App\Http\Controllers\TeacherController;
 use App\Http\Controllers\AdminController;
 
+use Illuminate\Support\Facades\Broadcast;
+use App\Models\Conversation;
 
 
 
@@ -184,3 +186,8 @@ Route::middleware(['auth', 'admin'])->group(function () {
 
 
 
+Broadcast::channel('chat.{conversationId}', function ($user, $conversationId) {
+    $conversation = Conversation::find($conversationId);
+    if (!$conversation) return false;
+    return $user->id === $conversation->student_id || $user->id === $conversation->tutor_id;
+});

@@ -425,8 +425,8 @@
                 }
 
                 if (!setupWebSocket()) {
-                    setInterval(pollMessages, 1500);
-                }
+    setInterval(pollMessages, 5000); 
+}
 
                 function appendMessageBubble(msg, isMe) {
                     if (msg.id && typeof msg.id === 'number' && renderedMessageIds.has(msg.id)) return;
