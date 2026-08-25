@@ -41,4 +41,4 @@ COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 EXPOSE 80
 
-CMD php artisan migrate --seed --force && /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf
+CMD php artisan config:clear && php artisan migrate --seed --force && /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf
