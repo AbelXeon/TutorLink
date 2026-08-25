@@ -197,7 +197,7 @@
     @include('Setting.Setting')
 
     <!-- Global Footer included for all layout-extending pages -->
-    @include('layouts.foot')
+    @include('Layouts.foot')
 
     <!-- REAL-TIME JAVASCRIPT ALERT & SOUND ENGINE -->
     @auth
