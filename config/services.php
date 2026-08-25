@@ -35,4 +35,9 @@ return [
         ],
     ],
 
+
+    'brevo' => [
+    'key' => env('BRAVO_API_KEY'),
+     ],
+
 ];
