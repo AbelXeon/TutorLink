@@ -26,12 +26,17 @@ class AppServiceProvider extends ServiceProvider
         if (config('app.env') === 'production') {
         URL::forceScheme('https');
 
-         Mail::extend('brevo', function () {
-        return (new BrevoTransportFactory())->create(
-            new Dsn('brevo+api', 'default', config('services.brevo.key'))
-        );
-    });
+        \Illuminate\Support\Facades\Log::info('Brevo key check', [
+            'is_set' => !empty(config('services.brevo.key')),
+            'length' => strlen((string) config('services.brevo.key')),
+        ]);
 
-    }
+        Mail::extend('brevo', function () {
+            return (new BrevoTransportFactory())->create(
+                new Dsn('brevo+api', 'default', config('services.brevo.key'))
+            );
+        });
+       }
+
     }
 }
