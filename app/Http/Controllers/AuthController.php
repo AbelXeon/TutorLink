@@ -26,15 +26,86 @@ class AuthController extends Controller
         return view('Auth.Teacher_Register', compact('locations'));
     }
 
+    /**
+     * Checks whether a given value for a unique column (email / phone_number / username)
+     * is actually free to use.
+     *
+     * Logic:
+     *  - No existing row with that value -> available (null returned).
+     *  - Existing row is verified/active  -> genuinely taken, return an error message.
+     *  - Existing row is unverified but its 15-minute verification window has expired
+     *    -> treat as abandoned registration, delete it (and its verification codes),
+     *       and free the field up (null returned).
+     *  - Existing row is unverified and still inside the window -> someone may be
+     *    actively verifying right now, block it with a clear message.
+     *
+     * Returns: null if the value is available to use, or a string error message if not.
+     */
+    private function checkFieldAvailability(string $column, string $value): ?string
+    {
+        $existing = User::where($column, $value)->first();
+
+        if (!$existing) {
+            return null; // nobody has this value at all
+        }
+
+        if ($existing->account_status !== 'unverified') {
+            return match ($column) {
+                'email'        => 'This email is already registered.',
+                'phone_number' => 'This phone number is already registered.',
+                'username'     => 'This username is already taken.',
+                default        => 'This value is already taken.',
+            };
+        }
+
+        // Unverified account found — check if its verification window has expired.
+        // 15 minutes matches the expiry used when generating the verification code.
+        if ($existing->created_at && $existing->created_at->lt(now()->subMinutes(15))) {
+            // Stale, abandoned registration — safe to clear out and free the field.
+            EmailVerification::where('user_id', $existing->id)->delete();
+            $existing->delete();
+            return null;
+        }
+
+        return match ($column) {
+            'email'        => 'This email has a pending, unverified registration. Please check your inbox for the code, or try again in a few minutes.',
+            'phone_number' => 'This phone number has a pending, unverified registration. Please try again in a few minutes.',
+            'username'     => 'This username has a pending, unverified registration. Please try again in a few minutes.',
+            default        => 'This value has a pending, unverified registration.',
+        };
+    }
+
+    /**
+     * Runs the stale/available check across email, phone_number, and username.
+     * Returns an associative array of field => message for any that are blocked
+     * (empty array means everything is available).
+     */
+    private function checkRegistrationFieldsAvailable(Request $request): array
+    {
+        $errors = [];
+
+        if ($msg = $this->checkFieldAvailability('email', $request->email)) {
+            $errors['email'] = $msg;
+        }
+        if ($msg = $this->checkFieldAvailability('phone_number', $request->phone_number)) {
+            $errors['phone_number'] = $msg;
+        }
+        if ($msg = $this->checkFieldAvailability('username', $request->username)) {
+            $errors['username'] = $msg;
+        }
+
+        return $errors;
+    }
+
     public function registerTeacher(Request $request)
     {
         $request->validate([
             'first_name'    => 'required|string|max:255',
             'middle_name'   => 'nullable|string|max:255',
             'last_name'     => 'required|string|max:255',
-            'email'         => 'required|string|email|max:255|unique:users,email',
-            'phone_number'  => 'required|string|max:15|unique:users,phone_number',
-            'username'      => 'required|string|min:5|max:16|unique:users,username',
+            'email'         => 'required|string|email|max:255',
+            'phone_number'  => 'required|string|max:15',
+            'username'      => 'required|string|min:5|max:16',
             'password'      => ['required','string','min:8','confirmed',
                    Password::min(8)
                     ->max(16)
@@ -45,6 +116,14 @@ class AuthController extends Controller
             'address'       => 'required|string|max:255',
             'location_id'   => 'required|exists:locations,id', 
         ]);
+
+        // Manual availability check (handles stale/unverified rows) instead of
+        // a plain `unique:users,...` rule, which would permanently block a field
+        // the moment a registration attempt failed partway through.
+        $availabilityErrors = $this->checkRegistrationFieldsAvailable($request);
+        if (!empty($availabilityErrors)) {
+            return back()->withErrors($availabilityErrors)->withInput();
+        }
 
         try {
             $role = Role::where('role_type', 'Teacher')->firstOrFail();
@@ -238,9 +317,9 @@ class AuthController extends Controller
             'first_name'    => 'required|string|max:255',
             'middle_name'   => 'nullable|string|max:255',
             'last_name'     => 'required|string|max:255',
-            'email'         => 'required|string|email|max:255|unique:users,email',
-            'phone_number'  => 'required|string|max:15|unique:users,phone_number',
-            'username'      => 'required|string|min:5|max:16|unique:users,username',
+            'email'         => 'required|string|email|max:255',
+            'phone_number'  => 'required|string|max:15',
+            'username'      => 'required|string|min:5|max:16',
             'password'      => [
                 'required',
                 'string',
@@ -254,6 +333,14 @@ class AuthController extends Controller
             'address'       => 'required|string|max:255',
             'location_id'   => 'required|exists:locations,id', 
         ]);
+
+        // Manual availability check (handles stale/unverified rows) instead of
+        // a plain `unique:users,...` rule, which would permanently block a field
+        // the moment a registration attempt failed partway through.
+        $availabilityErrors = $this->checkRegistrationFieldsAvailable($request);
+        if (!empty($availabilityErrors)) {
+            return back()->withErrors($availabilityErrors)->withInput();
+        }
 
         try {
             $role = Role::where('role_type', 'Student')->firstOrFail();

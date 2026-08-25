@@ -1,7 +1,5 @@
-# Use an official PHP runtime with Apache
 FROM php:8.2-apache
 
-# Install system dependencies and Postgres development tools
 RUN apt-get update && apt-get install -y \
     libpng-dev \
     libjpeg-dev \
@@ -11,41 +9,36 @@ RUN apt-get update && apt-get install -y \
     git \
     curl \
     libpq-dev \
+    supervisor \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install gd pdo pdo_mysql pdo_pgsql
 
-# Install Node.js 20 (required by Vite 7 and Tailwind v4)
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
     && apt-get install -y nodejs
 
-# Enable Apache mod_rewrite for Laravel routing
-RUN a2enmod rewrite
+RUN a2enmod rewrite proxy proxy_http proxy_wstunnel
 
-# Point Apache's Document Root to Laravel's public directory
 ENV APACHE_DOCUMENT_ROOT /var/www/html/public
 RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
 RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
 
-# Copy Composer from the official composer image
+RUN echo '<IfModule mod_proxy_wstunnel.c>\n    ProxyPass "/app" "ws://127.0.0.1:8080/app"\n    ProxyPassReverse "/app" "ws://127.0.0.1:8080/app"\n</IfModule>' > /etc/apache2/conf-available/reverb-proxy.conf \
+    && a2enconf reverb-proxy
+
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Set working directory inside the container
 WORKDIR /var/www/html
 
-# Copy your local project files into the container
 COPY . .
 
-# Install PHP dependencies
 RUN composer install --no-dev --optimize-autoloader
 
-# Install JS dependencies and compile assets
 RUN npm install && npm run build
 
-# Set the correct permissions for Laravel's storage and bootstrap cache
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 
-# Expose port 80
+COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+
 EXPOSE 80
 
-# Start Apache in the foreground
-CMD php artisan migrate --seed --force && apache2-foreground
+CMD php artisan migrate --seed --force && /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf
