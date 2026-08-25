@@ -27,7 +27,7 @@ class ProfileController extends Controller
           $schedules = $user->schedules;
 
         if (empty($tutorProfile->bio)) {
-            return view('Profile.Tutor_Profile_make',
+            return view('Profile.Tutor_Profile_Make',
              compact('user', 'tutorProfile', 'gradeLevels', 'categories','schedules'));
         }
 
