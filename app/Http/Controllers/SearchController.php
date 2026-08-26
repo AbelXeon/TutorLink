@@ -127,7 +127,7 @@ class SearchController extends Controller
                 ->exists();
         }
 
-        return view('Teacher.Teacher_profile', compact('tutor', 'reviews', 'averageRating', 'unreviewedBooking', 'canMessage'));
+        return view('Teacher.Teacher_Profile', compact('tutor', 'reviews', 'averageRating', 'unreviewedBooking', 'canMessage'));
     }
 
     // 3. Secure Review Submission Controller Engine
