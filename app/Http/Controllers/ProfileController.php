@@ -96,7 +96,7 @@ class ProfileController extends Controller
         $profile = TutorProfile::where('user_id', $user->id)->firstOrFail();
 
         if ($request->hasFile('profile_image')) {
-            if ($user->profile_image) {
+            if ($user->profile_image && !str_starts_with($user->profile_image, 'http')) {
                 Storage::disk('public')->delete($user->profile_image);
             }
             // UPDATED: Now calls our native resizing and compression helper method
@@ -194,37 +194,50 @@ class ProfileController extends Controller
 
      private function resizeAndSaveImage($file, $destinationPath)
 {
-    list($width, $height, $type) = getimagesize($file);
-    
+    $filePath = $file->getRealPath();
+    $imageInfo = @getimagesize($filePath);
+
+    if (!$imageInfo) {
+        // Fallback: Upload original directly to Cloudinary
+        $uploaded = Cloudinary::upload($filePath, [
+            'folder' => $destinationPath,
+        ]);
+        return $uploaded->getSecurePath();
+    }
+
+    list($width, $height, $type) = $imageInfo;
+
     $maxDimension = 300;
     $ratio = $width / $height;
-    
+
     if ($ratio > 1) {
-        $newWidth = $maxDimension;
-        $newHeight = $maxDimension / $ratio;
+        $newWidth = (int) $maxDimension;
+        $newHeight = (int) round($maxDimension / $ratio);
     } else {
-        $newWidth = $maxDimension * $ratio;
-        $newHeight = $maxDimension;
+        $newWidth = (int) round($maxDimension * $ratio);
+        $newHeight = (int) $maxDimension;
     }
 
     switch ($type) {
         case IMAGETYPE_JPEG:
-            $src = \imagecreatefromjpeg($file);
+            $src = @imagecreatefromjpeg($filePath);
             break;
         case IMAGETYPE_PNG:
-            $src = \imagecreatefrompng($file);
+            $src = @imagecreatefrompng($filePath);
             break;
         default:
-            // Fallback: upload the original file as-is to Cloudinary if GD can't read it
-            $uploaded = Cloudinary::upload($file->getRealPath(), [
-                'folder' => $destinationPath,
-            ]);
-            return $uploaded->getSecurePath();
+            $src = null;
+    }
+
+    if (!$src) {
+        $uploaded = Cloudinary::upload($filePath, [
+            'folder' => $destinationPath,
+        ]);
+        return $uploaded->getSecurePath();
     }
 
     $dst = imagecreatetruecolor($newWidth, $newHeight);
 
-    // Maintain transparency for PNG files
     if ($type == IMAGETYPE_PNG) {
         imagealphablending($dst, false);
         imagesavealpha($dst, true);
@@ -232,10 +245,8 @@ class ProfileController extends Controller
 
     imagecopyresampled($dst, $src, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
 
-    // Write the resized image to a temp file, upload it to Cloudinary, then discard the temp file —
-    // nothing touches persistent local storage on Render.
     $tempPath = tempnam(sys_get_temp_dir(), 'profile_img_') . '.jpg';
-    imagejpeg($dst, $tempPath, 80);
+    imagejpeg($dst, $tempPath, 85);
 
     imagedestroy($src);
     imagedestroy($dst);
@@ -246,7 +257,6 @@ class ProfileController extends Controller
 
     @unlink($tempPath);
 
-    // Store the full Cloudinary URL directly — this is what goes into users.profile_image
     return $uploaded->getSecurePath();
 }
 
