@@ -27,6 +27,11 @@ class AppServiceProvider extends ServiceProvider
             'length' => strlen((string) config('services.brevo.key')),
         ]);
 
+        \Illuminate\Support\Facades\Log::info('Cloudinary URL check', [
+    'is_set' => !empty(env('CLOUDINARY_URL')),
+    'length' => strlen((string) env('CLOUDINARY_URL')),
+               ]);
+
         Mail::extend('brevo', function () {
             return (new BrevoTransportFactory())->create(
                 new Dsn('brevo+api', 'default', config('services.brevo.key'))

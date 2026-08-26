@@ -78,9 +78,10 @@ class SearchController extends Controller
         // Load options for dropdowns
         $categories = Categories::with('subjects')->get();
         $locations = Location::all();
+    $user = Auth::user();
 
-        return view('Search.Tutor_view', compact('tutors', 'categories', 'locations', 'allowedTutorIds'));
-    }
+    return view('Search.Tutor_view', compact('tutors', 'categories', 'locations', 'allowedTutorIds', 'user'));
+        }
 
     // 2. Show Tutor Profile with Secure Review & Chat Authorization
     public function showTutorProfile($username)
