@@ -308,7 +308,7 @@
                     <div class="px-8 pb-8 relative">
                         <div class="absolute -top-14 left-8">
                             @if($user->profile_image)
-                                <img class="h-28 w-28 rounded-full object-cover border-4 border-white" src="{{ asset('storage/' . $user->profile_image) }}" alt="Tutor Photo">
+                                <img class="h-28 w-28 rounded-full object-cover border-4 border-white" src="{{ $user->profile_image }}" alt="Tutor Photo">
                             @else
                                 <div class="h-28 w-28 border-4 border-white rounded-full flex items-center justify-center td-display text-3xl" style="background: #f5f4f1; color: #1350e0;">
                                     {{ substr($user->first_name, 0, 1) }}{{ substr($user->last_name, 0, 1) }}

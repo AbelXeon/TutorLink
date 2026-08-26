@@ -12,6 +12,7 @@ use App\Models\Subjects;
 use App\Models\TutorProfile;
 use App\Models\Schedule;
 use App\Models\GradeLevels;
+use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 
 class ProfileController extends Controller
 {
@@ -192,57 +193,62 @@ class ProfileController extends Controller
 
 
      private function resizeAndSaveImage($file, $destinationPath)
-    {
-        list($width, $height, $type) = getimagesize($file);
-        
-        $maxDimension = 300;
-        $ratio = $width / $height;
-        
-        if ($ratio > 1) {
-            $newWidth = $maxDimension;
-            $newHeight = $maxDimension / $ratio;
-        } else {
-            $newWidth = $maxDimension * $ratio;
-            $newHeight = $maxDimension;
-        }
-
-        switch ($type) {
-            case IMAGETYPE_JPEG:
-                $src = \imagecreatefromjpeg($file);
-                break;
-            case IMAGETYPE_PNG:
-                $src = \imagecreatefrompng($file);
-                break;
-            default:
-                return $file->store($destinationPath, 'public'); // Fallback in case GD fails
-        }
-
-        $dst = imagecreatetruecolor($newWidth, $newHeight);
-
-        // Maintain transparency for PNG files
-        if ($type == IMAGETYPE_PNG) {
-            imagealphablending($dst, false);
-            imagesavealpha($dst, true);
-        }
-
-        imagecopyresampled($dst, $src, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
-
-        // Generate a cryptographically secure random filename
-        $filename = md5(uniqid()) . '.jpg';
-        $fullPath = storage_path('app/public/' . $destinationPath . '/' . $filename);
-
-        if (!file_exists(dirname($fullPath))) {
-            mkdir(dirname($fullPath), 0755, true);
-        }
-
-        // Save as a highly compressed JPEG (80% quality)
-        imagejpeg($dst, $fullPath, 80);
-
-        imagedestroy($src);
-        imagedestroy($dst);
-
-        return $destinationPath . '/' . $filename;
+{
+    list($width, $height, $type) = getimagesize($file);
+    
+    $maxDimension = 300;
+    $ratio = $width / $height;
+    
+    if ($ratio > 1) {
+        $newWidth = $maxDimension;
+        $newHeight = $maxDimension / $ratio;
+    } else {
+        $newWidth = $maxDimension * $ratio;
+        $newHeight = $maxDimension;
     }
+
+    switch ($type) {
+        case IMAGETYPE_JPEG:
+            $src = \imagecreatefromjpeg($file);
+            break;
+        case IMAGETYPE_PNG:
+            $src = \imagecreatefrompng($file);
+            break;
+        default:
+            // Fallback: upload the original file as-is to Cloudinary if GD can't read it
+            $uploaded = Cloudinary::upload($file->getRealPath(), [
+                'folder' => $destinationPath,
+            ]);
+            return $uploaded->getSecurePath();
+    }
+
+    $dst = imagecreatetruecolor($newWidth, $newHeight);
+
+    // Maintain transparency for PNG files
+    if ($type == IMAGETYPE_PNG) {
+        imagealphablending($dst, false);
+        imagesavealpha($dst, true);
+    }
+
+    imagecopyresampled($dst, $src, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
+
+    // Write the resized image to a temp file, upload it to Cloudinary, then discard the temp file —
+    // nothing touches persistent local storage on Render.
+    $tempPath = tempnam(sys_get_temp_dir(), 'profile_img_') . '.jpg';
+    imagejpeg($dst, $tempPath, 80);
+
+    imagedestroy($src);
+    imagedestroy($dst);
+
+    $uploaded = Cloudinary::upload($tempPath, [
+        'folder' => $destinationPath,
+    ]);
+
+    @unlink($tempPath);
+
+    // Store the full Cloudinary URL directly — this is what goes into users.profile_image
+    return $uploaded->getSecurePath();
+}
 
 
 }

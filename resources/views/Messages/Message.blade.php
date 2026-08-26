@@ -165,7 +165,7 @@
 
                             @elseif($msg->file_type == 'image')
                                 <div class="space-y-1">
-                                    <img src="{{ asset('storage/' . $msg->file_path) }}" class="max-h-60 object-cover cursor-pointer" alt="Attachment" onclick="openImageLightbox(this.src)" />
+                                    <img src="{{ $msg->file_path) }}" class="max-h-60 object-cover cursor-pointer" alt="Attachment" onclick="openImageLightbox(this.src)" />
                                     @if($msg->message_text) <p class="mt-1">{{ $msg->message_text }}</p> @endif
                                 </div>
 
@@ -173,7 +173,7 @@
                                 <div class="flex items-center gap-2">
                                     <svg class="h-8 w-8 text-red-500" fill="currentColor" viewBox="0 0 20 20"><path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z"/></svg>
                                     <div class="truncate">
-                                        <a href="{{ asset('storage/' . $msg->file_path) }}" download class="font-bold underline truncate block">Download Attachment</a>
+                                        <a href="{{ $msg->file_path) }}" download class="font-bold underline truncate block">Download Attachment</a>
                                         <span class="text-[10px] opacity-70">Secure Document File</span>
                                     </div>
                                 </div>
@@ -443,16 +443,16 @@
                     if (!msg.file_type) {
                         msgBody = `<p>${escapeHtml(msg.message_text)}</p>`;
                     } else if (msg.file_type === 'image') {
-                        const imgSrc = msg.file_path ? `/storage/${msg.file_path}` : '';
-                        msgBody = `<img src="${imgSrc}" class="max-h-60 object-cover cursor-pointer" onclick="openImageLightbox(this.src)" />`;
-                        if (msg.message_text) msgBody += `<p class="mt-1">${escapeHtml(msg.message_text)}</p>`;
-                    } else if (msg.file_type === 'document') {
-                        msgBody = `
-                            <div class="flex items-center gap-2">
-                                <svg class="h-8 w-8 text-red-500" fill="currentColor" viewBox="0 0 20 20"><path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z"/></svg>
-                                <a href="/storage/${msg.file_path}" download class="font-bold underline truncate block">Download Attachment</a>
-                            </div>
-                        `;
+    const imgSrc = msg.file_path || '';
+    msgBody = `<img src="${imgSrc}" class="max-h-60 object-cover cursor-pointer" onclick="openImageLightbox(this.src)" />`;
+    if (msg.message_text) msgBody += `<p class="mt-1">${escapeHtml(msg.message_text)}</p>`;
+} else if (msg.file_type === 'document') {
+    msgBody = `
+        <div class="flex items-center gap-2">
+            <svg class="h-8 w-8 text-red-500" fill="currentColor" viewBox="0 0 20 20"><path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z"/></svg>
+            <a href="${msg.file_path}" download class="font-bold underline truncate block">Download Attachment</a>
+        </div>
+    `;
                     } else if (msg.file_type === 'location') {
                         const coords = (msg.message_text || '').split(',');
                         msgBody = `

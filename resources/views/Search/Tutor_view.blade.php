@@ -198,7 +198,7 @@
                 <!-- Left Column: Square Image with Active Status Indicator -->
                 <div class="relative w-32 h-32 md:w-36 md:h-36 flex-shrink-0">
                     @if($tutor->user->profile_image)
-                        <img src="{{ asset('storage/' . $tutor->user->profile_image) }}" alt="Photo" class="w-full h-full object-cover" style="border: 1px solid var(--line);">
+                        <img src="{{ $user->profile_image }}" alt="Photo" class="w-full h-full object-cover" style="border: 1px solid var(--line);">
                     @else
                         <div class="w-full h-full flex items-center justify-center text-2xl display-font" style="background: var(--paper); color: var(--ink); border: 1px solid var(--line);">
                             {{ substr($tutor->user->first_name, 0, 1) }}{{ substr($tutor->user->last_name, 0, 1) }}

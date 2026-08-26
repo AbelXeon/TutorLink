@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -76,17 +77,21 @@ class MessageController extends Controller
         $messageText = $request->message_text;
 
         if ($request->hasFile('attachment')) {
-            $file = $request->file('attachment');
-            $extension = strtolower($file->getClientOriginalExtension());
-            
-            if (in_array($extension, ['jpg', 'jpeg', 'png'])) {
-                $fileType = 'image';
-                $filePath = $this->resizeAndSaveImage($file, 'attachments');
-            } else {
-                $fileType = 'document';
-                $filePath = $file->store('attachments', 'public');
-            }
-        }
+    $file = $request->file('attachment');
+    $extension = strtolower($file->getClientOriginalExtension());
+    
+    if (in_array($extension, ['jpg', 'jpeg', 'png'])) {
+        $fileType = 'image';
+        $filePath = $this->resizeAndSaveImage($file, 'attachments');
+    } else {
+        $fileType = 'document';
+        $uploaded = Cloudinary::upload($file->getRealPath(), [
+            'folder' => 'attachments',
+            'resource_type' => 'raw', // documents (pdf/doc/docx) aren't images, Cloudinary needs this flag
+        ]);
+        $filePath = $uploaded->getSecurePath();
+    }
+}
 
         if ($request->filled('latitude') && $request->filled('longitude')) {
             $fileType = 'location';
@@ -165,52 +170,55 @@ class MessageController extends Controller
     }
 
     private function resizeAndSaveImage($file, $destinationPath)
-    {
-        list($width, $height, $type) = getimagesize($file);
-        
-        $maxDimension = 600;
-        $ratio = $width / $height;
-        
-        if ($ratio > 1) {
-            $newWidth = $maxDimension;
-            $newHeight = $maxDimension / $ratio;
-        } else {
-            $newWidth = $maxDimension * $ratio;
-            $newHeight = $maxDimension;
-        }
-
-        switch ($type) {
-            case IMAGETYPE_JPEG:
-                $src = imagecreatefromjpeg($file);
-                break;
-            case IMAGETYPE_PNG:
-                $src = imagecreatefrompng($file);
-                break;
-            default:
-                return $file->store($destinationPath, 'public');
-        }
-
-        $dst = imagecreatetruecolor($newWidth, $newHeight);
-
-        if ($type == IMAGETYPE_PNG) {
-            imagealphablending($dst, false);
-            imagesavealpha($dst, true);
-        }
-
-        imagecopyresampled($dst, $src, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
-
-        $filename = md5(uniqid()) . '.jpg';
-        $fullPath = storage_path('app/public/' . $destinationPath . '/' . $filename);
-
-        if (!file_exists(dirname($fullPath))) {
-            mkdir(dirname($fullPath), 0755, true);
-        }
-
-        imagejpeg($dst, $fullPath, 80);
-
-        imagedestroy($src);
-        imagedestroy($dst);
-
-        return $destinationPath . '/' . $filename;
+{
+    list($width, $height, $type) = getimagesize($file);
+    
+    $maxDimension = 600;
+    $ratio = $width / $height;
+    
+    if ($ratio > 1) {
+        $newWidth = $maxDimension;
+        $newHeight = $maxDimension / $ratio;
+    } else {
+        $newWidth = $maxDimension * $ratio;
+        $newHeight = $maxDimension;
     }
+
+    switch ($type) {
+        case IMAGETYPE_JPEG:
+            $src = imagecreatefromjpeg($file);
+            break;
+        case IMAGETYPE_PNG:
+            $src = imagecreatefrompng($file);
+            break;
+        default:
+            $uploaded = Cloudinary::upload($file->getRealPath(), [
+                'folder' => $destinationPath,
+            ]);
+            return $uploaded->getSecurePath();
+    }
+
+    $dst = imagecreatetruecolor($newWidth, $newHeight);
+
+    if ($type == IMAGETYPE_PNG) {
+        imagealphablending($dst, false);
+        imagesavealpha($dst, true);
+    }
+
+    imagecopyresampled($dst, $src, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
+
+    $tempPath = tempnam(sys_get_temp_dir(), 'msg_img_') . '.jpg';
+    imagejpeg($dst, $tempPath, 80);
+
+    imagedestroy($src);
+    imagedestroy($dst);
+
+    $uploaded = Cloudinary::upload($tempPath, [
+        'folder' => $destinationPath,
+    ]);
+
+    @unlink($tempPath);
+
+    return $uploaded->getSecurePath();
+}
 }
