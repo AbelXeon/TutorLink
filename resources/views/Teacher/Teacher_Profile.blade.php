@@ -156,8 +156,8 @@
                 <!-- Profile Image -->
                 <div class="w-24 h-24 sm:w-28 sm:h-28 flex-shrink-0 relative mx-auto md:mx-0 lg:mx-auto">
                     @if($tutor->user->profile_image)
-                        <img src="{{ $user->profile_image }}" alt="Photo" class="w-full h-full object-cover" style="border: 1px solid var(--line);">
-                    @else
+    <img src="{{ $tutor->user->profile_image }}" alt="Photo" class="w-full h-full object-cover" style="border: 1px solid var(--line);">
+@else
                         <div class="w-full h-full flex items-center justify-center text-2xl display-font" style="background: var(--paper); color: var(--ink); border: 1px solid var(--line);">
                             {{ substr($tutor->user->first_name, 0, 1) }}{{ substr($tutor->user->last_name, 0, 1) }}
                         </div>
