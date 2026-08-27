@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -12,7 +14,11 @@ use App\Models\Subjects;
 use App\Models\TutorProfile;
 use App\Models\Schedule;
 use App\Models\GradeLevels;
-use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
+use Cloudinary\Cloudinary;
+use Cloudinary\Configuration\Configuration;
+
+
+
 
 class ProfileController extends Controller
 {
@@ -194,15 +200,17 @@ class ProfileController extends Controller
 
      private function resizeAndSaveImage($file, $destinationPath)
 {
+    Configuration::instance(env('CLOUDINARY_URL'));
+    $cloudinary = new Cloudinary();
+
     $filePath = $file->getRealPath();
     $imageInfo = @getimagesize($filePath);
 
     if (!$imageInfo) {
-        // Fallback: Upload original directly to Cloudinary
-        $uploaded = Cloudinary::upload($filePath, [
+        $result = $cloudinary->uploadApi()->upload($filePath, [
             'folder' => $destinationPath,
         ]);
-        return $uploaded->getSecurePath();
+        return $result['secure_url'];
     }
 
     list($width, $height, $type) = $imageInfo;
@@ -230,10 +238,10 @@ class ProfileController extends Controller
     }
 
     if (!$src) {
-        $uploaded = Cloudinary::upload($filePath, [
+        $result = $cloudinary->uploadApi()->upload($filePath, [
             'folder' => $destinationPath,
         ]);
-        return $uploaded->getSecurePath();
+        return $result['secure_url'];
     }
 
     $dst = imagecreatetruecolor($newWidth, $newHeight);
@@ -251,13 +259,13 @@ class ProfileController extends Controller
     imagedestroy($src);
     imagedestroy($dst);
 
-    $uploaded = Cloudinary::upload($tempPath, [
+    $result = $cloudinary->uploadApi()->upload($tempPath, [
         'folder' => $destinationPath,
     ]);
 
     @unlink($tempPath);
 
-    return $uploaded->getSecurePath();
+    return $result['secure_url'];
 }
 
 

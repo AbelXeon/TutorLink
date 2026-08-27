@@ -269,6 +269,8 @@
     </div>
     </main>
 
+@include('Layouts.Footer')
+
  @include('Layouts.foot')
     <!-- FORGOT PASSWORD SWISS MODAL OVERLAY (Backdrop Updated to Blur/Blue styled overlay) -->
     <div id="forgot_modal" class="hidden fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-md select-none transition duration-300">

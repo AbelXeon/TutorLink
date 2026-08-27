@@ -2,8 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
-use Illuminate\Http\Request;
+
+use Cloudinary\Cloudinary;
+use Cloudinary\Configuration\Configuration;use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -12,6 +13,9 @@ use App\Models\Message;
 use App\Models\Notification;
 use App\Models\User;
 use App\Events\MessageSent;
+
+
+
 
 class MessageController extends Controller
 {
@@ -84,13 +88,16 @@ class MessageController extends Controller
         $fileType = 'image';
         $filePath = $this->resizeAndSaveImage($file, 'attachments');
     } else {
-        $fileType = 'document';
-        $uploaded = Cloudinary::upload($file->getRealPath(), [
-            'folder' => 'attachments',
-            'resource_type' => 'raw', // documents (pdf/doc/docx) aren't images, Cloudinary needs this flag
-        ]);
-        $filePath = $uploaded->getSecurePath();
+    $fileType = 'document';
+    Configuration::instance(env('CLOUDINARY_URL'));
+    $cloudinary = new Cloudinary();
+    $result = $cloudinary->uploadApi()->upload($file->getRealPath(), [
+        'folder' => 'attachments',
+        'resource_type' => 'raw',
+    ]);
+    $filePath = $result['secure_url'];
     }
+
 }
 
         if ($request->filled('latitude') && $request->filled('longitude')) {
@@ -171,6 +178,9 @@ class MessageController extends Controller
 
     private function resizeAndSaveImage($file, $destinationPath)
 {
+    Configuration::instance(env('CLOUDINARY_URL'));
+    $cloudinary = new Cloudinary();
+
     list($width, $height, $type) = getimagesize($file);
     
     $maxDimension = 600;
@@ -192,10 +202,10 @@ class MessageController extends Controller
             $src = imagecreatefrompng($file);
             break;
         default:
-            $uploaded = Cloudinary::upload($file->getRealPath(), [
+            $result = $cloudinary->uploadApi()->upload($file->getRealPath(), [
                 'folder' => $destinationPath,
             ]);
-            return $uploaded->getSecurePath();
+            return $result['secure_url'];
     }
 
     $dst = imagecreatetruecolor($newWidth, $newHeight);
@@ -213,12 +223,12 @@ class MessageController extends Controller
     imagedestroy($src);
     imagedestroy($dst);
 
-    $uploaded = Cloudinary::upload($tempPath, [
+    $result = $cloudinary->uploadApi()->upload($tempPath, [
         'folder' => $destinationPath,
     ]);
 
     @unlink($tempPath);
 
-    return $uploaded->getSecurePath();
+    return $result['secure_url'];
 }
 }
